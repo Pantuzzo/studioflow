@@ -1,0 +1,65 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--sf-font-sans);
+  font-size: var(--sf-text-base);
+  line-height: 1.5;
+  color: var(--sf-text);
+  background: var(--sf-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--sf-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Screen-reader-only utility (used by the skip link). */
+.sf-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sf-skip-link {
+  position: absolute;
+  left: var(--sf-space-3);
+  top: var(--sf-space-3);
+  z-index: 100;
+  padding: var(--sf-space-2) var(--sf-space-3);
+  background: var(--sf-primary);
+  color: var(--sf-primary-contrast);
+  border-radius: var(--sf-radius-sm);
+  transform: translateY(-150%);
+  transition: transform 0.15s ease;
+}
+
+.sf-skip-link:focus {
+  transform: translateY(0);
+}

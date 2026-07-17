@@ -1,0 +1,38 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sf-space-6);
+}
+
+.header h1 {
+  font-size: var(--sf-text-2xl);
+}
+
+.subtitle {
+  color: var(--sf-text-muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sf-space-4);
+}
+
+.card {
+  background: var(--sf-surface);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  padding: var(--sf-space-5);
+  box-shadow: var(--sf-shadow-sm);
+}
+
+.cardLabel {
+  color: var(--sf-text-muted);
+  font-size: var(--sf-text-sm);
+}
+
+.cardValue {
+  margin-top: var(--sf-space-2);
+  font-size: var(--sf-text-xl);
+  font-weight: 700;
+}
