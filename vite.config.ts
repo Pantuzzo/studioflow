@@ -18,7 +18,9 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      exclude: ['src/mocks/**', 'src/test/**', '**/*.d.ts'],
+      // Only measure our own source; keeps dist/, public/ and config out.
+      include: ['src/**'],
+      exclude: ['src/mocks/**', 'src/test/**', 'src/main.tsx', '**/*.d.ts'],
     },
   },
 })
