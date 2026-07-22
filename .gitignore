@@ -27,3 +27,8 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# Vendored agent skills — content is restored from skills-lock.json
+# (the lock IS tracked); these dirs are generated, not source.
+.agents/skills/
+.claude/skills/
