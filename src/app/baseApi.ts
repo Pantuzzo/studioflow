@@ -3,8 +3,8 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 /**
  * Resolve the API base URL. Prefer an explicit VITE_API_URL (set once the real
  * backend exists). Otherwise use the current origin — an absolute same-origin
- * URL that MSW matches by pathname in both the browser and jsdom (where Node's
- * fetch rejects relative URLs).
+ * URL that MSW matches by pathname in both the browser and happy-dom (where
+ * Node's fetch rejects relative URLs). See docs/adr/0004-test-environment.md.
  */
 function resolveBaseUrl(): string {
   const configured = import.meta.env.VITE_API_URL
