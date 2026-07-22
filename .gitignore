@@ -32,3 +32,6 @@ Thumbs.db
 # (the lock IS tracked); these dirs are generated, not source.
 .agents/skills/
 .claude/skills/
+
+*storybook.log
+storybook-static
