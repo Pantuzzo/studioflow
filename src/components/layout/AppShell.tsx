@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import styles from './AppShell.module.css'
 
 const NAV_ITEMS = [
@@ -38,6 +39,9 @@ export function AppShell() {
             ))}
           </ul>
         </nav>
+        <div className={styles.sidebarFooter}>
+          <ThemeToggle />
+        </div>
       </aside>
 
       <main id="main" className={styles.main}>

@@ -59,6 +59,10 @@
   font-weight: 600;
 }
 
+.sidebarFooter {
+  margin-top: auto;
+}
+
 .main {
   padding: var(--sf-space-8);
   overflow-y: auto;

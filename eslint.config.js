@@ -40,4 +40,9 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Storybook config isn't subject to React Fast Refresh.
+    files: ['.storybook/**/*.{ts,tsx}'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
 )
