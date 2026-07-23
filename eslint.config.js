@@ -10,6 +10,7 @@ export default tseslint.config(
     ignores: [
       'dist',
       'coverage',
+      'storybook-static',
       'node_modules',
       'public/mockServiceWorker.js',
     ],
