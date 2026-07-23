@@ -1,0 +1,27 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sf-space-2);
+}
+
+.label {
+  font-size: var(--sf-text-sm);
+  font-weight: 600;
+  color: var(--sf-text);
+}
+
+.label[data-required]::after {
+  content: ' *';
+  color: var(--sf-danger);
+}
+
+.hint {
+  font-size: var(--sf-text-sm);
+  color: var(--sf-text-muted);
+  margin-top: calc(-1 * var(--sf-space-1));
+}
+
+.error {
+  font-size: var(--sf-text-sm);
+  color: var(--sf-danger);
+}
