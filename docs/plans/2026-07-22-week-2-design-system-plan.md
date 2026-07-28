@@ -26,20 +26,25 @@
 **Files:** `package.json`, `pnpm-lock.yaml`
 
 **Step 1:** Install runtime deps:
+
 ```bash
 pnpm add class-variance-authority @fontsource-variable/roboto \
   @radix-ui/react-slot @radix-ui/react-checkbox @radix-ui/react-radio-group \
   @radix-ui/react-select @radix-ui/react-dialog
 ```
+
 **VERIFY API:** confirm `@fontsource-variable/roboto` exists and exposes a variable face; if not, fall back to `@fontsource/roboto` (import weights 400/500/700). Note which you used.
 
 **Step 2:** Verify install and that the app still builds:
+
 ```bash
 pnpm build
 ```
+
 Expected: build succeeds.
 
 **Step 3: Commit**
+
 ```bash
 git add package.json pnpm-lock.yaml
 git commit -m "chore: add Radix primitives, CVA, and Roboto font deps"
@@ -52,18 +57,23 @@ git commit -m "chore: add Radix primitives, CVA, and Roboto font deps"
 **Files:** `.storybook/main.ts`, `.storybook/preview.ts`(x), `package.json`, `eslint.config.js`
 
 **Step 1: VERIFY API** — run the init and let it detect Vite/React:
+
 ```bash
 pnpm dlx storybook@latest init --builder vite --yes
 ```
+
 Record the exact Storybook version it installed (pin it). It adds `storybook`/`build-storybook` scripts and a `stories` glob.
 
 **Step 2:** Add the a11y addon:
+
 ```bash
 pnpm add -D @storybook/addon-a11y
 ```
+
 Register it in `.storybook/main.ts` `addons`. **VERIFY API:** in current Storybook the docs addon may be bundled or separate — ensure autodocs is enabled (`docs: { autodocs: 'tag' }` or the current equivalent).
 
 **Step 3:** In `.storybook/preview.ts(x)` import the token + global CSS and the Roboto font so stories render with the real design language:
+
 ```ts
 import '@fontsource-variable/roboto' // or the static import chosen in Task 1
 import '../src/styles/tokens.css'
@@ -73,13 +83,16 @@ import '../src/styles/global.css'
 **Step 4:** Clean up: delete the boilerplate `src/stories/` Storybook example folder. Add `storybook-static` to `.gitignore` and `.prettierignore`. Ensure `eslint.config.js` ignores `!.storybook` correctly and lints `.storybook`.
 
 **Step 5:** Verify dev + build:
+
 ```bash
 pnpm storybook        # loads with no example stories
 pnpm build-storybook  # produces storybook-static/
 ```
+
 Expected: both succeed.
 
 **Step 6: Commit**
+
 ```bash
 git add -A
 git commit -m "chore: set up Storybook (Vite builder) with a11y addon"
@@ -92,33 +105,43 @@ git commit -m "chore: set up Storybook (Vite builder) with a11y addon"
 **Files:** Modify `src/main.tsx`, `src/styles/tokens.css`
 
 **Step 1:** Import Roboto once at the app entry (`src/main.tsx`, top with the other CSS imports):
+
 ```ts
 import '@fontsource-variable/roboto' // match Task 1's choice
 ```
 
 **Step 2:** In `src/styles/tokens.css` set the sans stack and add the component tokens (light `:root` and the dark `@media` block):
+
 ```css
---sf-font-sans: 'Roboto', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+--sf-font-sans:
+  'Roboto', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
 /* Interaction / component tokens */
---sf-ring: var(--sf-primary);      /* focus ring color */
---sf-primary-active: #3730a3;      /* pressed (dark block: a lighter indigo) */
---sf-surface-disabled: #e2e8f0;    /* dark block: #1e293b */
+--sf-ring: var(--sf-primary); /* focus ring color */
+--sf-primary-active: #3730a3; /* pressed (dark block: a lighter indigo) */
+--sf-surface-disabled: #e2e8f0; /* dark block: #1e293b */
 
 /* Motion */
 --sf-duration-fast: 120ms;
 --sf-ease: cubic-bezier(0.2, 0, 0, 1);
 ```
+
 Add the dark-theme values in the existing `@media (prefers-color-scheme: dark)` block.
 
 **Step 3:** Point the global focus ring at the token in `src/styles/global.css`:
+
 ```css
-:focus-visible { outline: 2px solid var(--sf-ring); outline-offset: 2px; border-radius: 4px; }
+:focus-visible {
+  outline: 2px solid var(--sf-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 ```
 
 **Step 4:** Verify visually — run `pnpm dev`, confirm the app now renders in Roboto (inspect computed `font-family` on `body`).
 
 **Step 5: Commit**
+
 ```bash
 git add src/main.tsx src/styles/tokens.css src/styles/global.css
 git commit -m "feat: load Roboto and add interaction/motion tokens"
@@ -131,6 +154,7 @@ git commit -m "feat: load Roboto and add interaction/motion tokens"
 **Files:** Create `src/theme/useTheme.ts`, `src/theme/useTheme.test.ts`, `src/components/ui/ThemeToggle/ThemeToggle.tsx` (+ `.module.css`, `.stories.tsx`, `.test.tsx`, `index.ts`). Modify `src/styles/tokens.css`, `src/components/layout/AppShell.tsx`.
 
 **Step 1: Write the failing test** (`src/theme/useTheme.test.ts`):
+
 ```ts
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -165,12 +189,15 @@ describe('useTheme', () => {
 ```
 
 **Step 2: Run to verify it fails**
+
 ```bash
 pnpm test src/theme/useTheme.test.ts
 ```
+
 Expected: FAIL (module not found).
 
 **Step 3: Implement `src/theme/useTheme.ts`:**
+
 ```ts
 import { useCallback, useState } from 'react'
 
@@ -207,14 +234,17 @@ export function useTheme() {
 **Step 4:** Add explicit-override CSS to `src/styles/tokens.css` so a manual choice beats the media query. Duplicate the light values under `:root[data-theme='light']` and the dark values under `:root[data-theme='dark']` (these win over `@media` because of specificity + source order). Keep the existing `:root` and `@media` blocks for the system default.
 
 **Step 5: Run to verify pass**
+
 ```bash
 pnpm test src/theme/useTheme.test.ts
 ```
+
 Expected: PASS.
 
 **Step 6:** Build `ThemeToggle` (follow the Button template from Task 5 for file layout). It cycles system→light→dark or offers 3 buttons; must have an accessible name (`aria-label`) and indicate the current value (`aria-pressed` or a segmented `role="radiogroup"`). Add a test asserting it updates `data-theme`, and a story. Mount it in `AppShell` (in the sidebar brand row).
 
 **Step 7:** Verify all gates, then commit:
+
 ```bash
 pnpm typecheck && pnpm lint && pnpm test && pnpm format:check
 git add -A
@@ -232,6 +262,7 @@ This task establishes the pattern every later component copies: Radix + CVA + CS
 **Files:** Create `src/components/ui/Button/Button.tsx`, `Button.module.css`, `Button.stories.tsx`, `Button.test.tsx`, `index.ts`.
 
 **Step 1: Write the failing test** (`Button.test.tsx`):
+
 ```tsx
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -247,19 +278,34 @@ describe('Button', () => {
   })
 
   it('applies the variant/size classes', () => {
-    render(<Button variant="ghost" size="sm">X</Button>)
+    render(
+      <Button variant="ghost" size="sm">
+        X
+      </Button>,
+    )
     // class names are hashed; assert the element exists and is a button
     expect(screen.getByRole('button', { name: 'X' })).toBeInTheDocument()
   })
 
   it('renders as a link when asChild is used', () => {
-    render(<Button asChild><a href="/x">Go</a></Button>)
-    expect(screen.getByRole('link', { name: 'Go' })).toHaveAttribute('href', '/x')
+    render(
+      <Button asChild>
+        <a href="/x">Go</a>
+      </Button>,
+    )
+    expect(screen.getByRole('link', { name: 'Go' })).toHaveAttribute(
+      'href',
+      '/x',
+    )
   })
 
   it('is not clickable when disabled', async () => {
     const onClick = vi.fn()
-    render(<Button disabled onClick={onClick}>No</Button>)
+    render(
+      <Button disabled onClick={onClick}>
+        No
+      </Button>,
+    )
     await userEvent.click(screen.getByRole('button', { name: 'No' }))
     expect(onClick).not.toHaveBeenCalled()
   })
@@ -267,12 +313,15 @@ describe('Button', () => {
 ```
 
 **Step 2: Run to verify it fails**
+
 ```bash
 pnpm test src/components/ui/Button/Button.test.tsx
 ```
+
 Expected: FAIL (module not found).
 
 **Step 3: Implement `Button.tsx`:**
+
 ```tsx
 import { forwardRef } from 'react'
 import { Slot } from '@radix-ui/react-slot'
@@ -291,27 +340,38 @@ export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
   VariantProps<typeof button> & { asChild?: boolean }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  function Button({ className, variant, size, asChild = false, ...props }, ref) {
+  function Button(
+    { className, variant, size, asChild = false, ...props },
+    ref,
+  ) {
     const Comp = asChild ? Slot : 'button'
     return (
-      <Comp ref={ref} className={button({ variant, size, className })} {...props} />
+      <Comp
+        ref={ref}
+        className={button({ variant, size, className })}
+        {...props}
+      />
     )
   },
 )
 ```
+
 And `index.ts`: `export { Button, type ButtonProps } from './Button'`.
 
 **Step 4:** Write `Button.module.css` using tokens only (no raw colors): `.base` (inline-flex, gap, radius, font, focus handled globally, `disabled` opacity + `cursor: not-allowed`, `transition` using `--sf-duration-fast`/`--sf-ease`), `.solid/.soft/.ghost` (backgrounds via `--sf-primary` / `--sf-surface-subtle` / transparent; hover uses `--sf-primary-hover`; active uses `--sf-primary-active`), `.sm/.md/.lg` (padding + font-size from tokens). Respect `@media (prefers-reduced-motion: reduce) { .base { transition: none } }`.
 
 **Step 5: Run to verify pass**
+
 ```bash
 pnpm test src/components/ui/Button/Button.test.tsx
 ```
+
 Expected: PASS.
 
 **Step 6:** Write `Button.stories.tsx`: a default story, a story per variant, per size, a disabled story, and an `asChild` link story. Add the `autodocs` tag. Confirm the a11y addon shows no violations in the Storybook UI.
 
 **Step 7:** Verify gates + commit:
+
 ```bash
 pnpm typecheck && pnpm lint && pnpm test && pnpm format:check
 git add src/components/ui/Button
@@ -329,6 +389,7 @@ git commit -m "feat: Button component (Radix Slot + CVA template)"
 **Step 2:** Verify it renders in `pnpm storybook` under a "Foundations" section.
 
 **Step 3: Commit**
+
 ```bash
 git add src/components/ui/Foundations.mdx
 git commit -m "docs: Foundations page (tokens, type scale, spacing) in Storybook"
@@ -347,6 +408,7 @@ Each task below follows the **Button template** (files, `forwardRef`, CVA where 
 **Spec:** Composition (no Radix required, or use `@radix-ui/react-label`). Renders `<label>`, optional description/hint, optional error message, and required indicator. Generates an `id` (React `useId`) and exposes wiring so the child control gets `id`, `aria-describedby` (hint + error ids), and `aria-invalid` when errored. Design the API — recommended: a `Field` that provides context, plus `Field.Label`, `Field.Hint`, `Field.Error`, and a render that passes control props. **Keep it minimal**; Input (Task 8) is its first consumer.
 
 **Key tests:**
+
 - Label is associated with the control (`getByLabelText` finds it).
 - When `error` is set, the control has `aria-invalid="true"` and `aria-describedby` includes the error id; the error has `role="alert"`.
 - The hint id is in `aria-describedby` when no error.
@@ -410,18 +472,22 @@ Each task below follows the **Button template** (files, `forwardRef`, CVA where 
 **Step 1:** Barrel-export all components from `src/components/ui/index.ts`.
 
 **Step 2:** Add a `build-storybook` step to `.github/workflows/ci.yml` after Build:
+
 ```yaml
-      - name: Build Storybook
-        run: pnpm build-storybook
+- name: Build Storybook
+  run: pnpm build-storybook
 ```
 
 **Step 3:** Full local verification:
+
 ```bash
 pnpm typecheck && pnpm lint && pnpm format:check && pnpm test:coverage && pnpm build && pnpm build-storybook
 ```
+
 Expected: all green; ui components at high coverage.
 
 **Step 4: Commit + push**
+
 ```bash
 git add -A
 git commit -m "chore: barrel exports and build-storybook CI gate"

@@ -19,9 +19,9 @@ accessible, story, both themes).
 2. **Primitives base:** **Radix Primitives (headless)** own behaviour, focus,
    ARIA and keyboard for the complex widgets. We style 100% ourselves.
 3. **Styling / variants:** keep the app's single styling system — **CSS Modules
-   + CSS custom-property tokens** — and add **CVA (class-variance-authority)**
-   for typed variant APIs that map to CSS Module class names. No utility-class
-   framework, no second styling paradigm.
+   - CSS custom-property tokens** — and add **CVA (class-variance-authority)**
+     for typed variant APIs that map to CSS Module class names. No utility-class
+     framework, no second styling paradigm.
 4. **Typography:** **Roboto**, self-hosted via `@fontsource-variable/roboto`
    (fall back to static 400/500/700 if variable is undesirable). Set
    `--sf-font-sans: 'Roboto', system-ui, …`. This also fixes the current
@@ -52,7 +52,7 @@ Every component follows the **Button template**: Radix (behaviour/a11y) + CVA
 const button = cva(styles.base, {
   variants: {
     variant: { solid: styles.solid, soft: styles.soft, ghost: styles.ghost },
-    size:    { sm: styles.sm, md: styles.md, lg: styles.lg },
+    size: { sm: styles.sm, md: styles.md, lg: styles.lg },
   },
   defaultVariants: { variant: 'solid', size: 'md' },
 })
@@ -60,7 +60,13 @@ const button = cva(styles.base, {
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button' // Radix Slot → polymorphism
-    return <Comp ref={ref} className={button({ variant, size, className })} {...props} />
+    return (
+      <Comp
+        ref={ref}
+        className={button({ variant, size, className })}
+        {...props}
+      />
+    )
   },
 )
 ```
@@ -101,8 +107,8 @@ Week 4 optimistic updates): **Tooltip**, **Toast**.
   `preview`).
 - **Testing — two layers, no duplication:** DoD test per component is **Vitest +
   Testing Library** (same pattern as the Clients test); stories cover
-  variants/states and the a11y addon catches a11y regressions. *Optional
-  stretch:* Storybook's Vitest addon running stories as tests (portable
+  variants/states and the a11y addon catches a11y regressions. _Optional
+  stretch:_ Storybook's Vitest addon running stories as tests (portable
   stories).
 - **CI:** add a **`build-storybook`** step so a broken story fails the build.
   Deploying Storybook (GH Pages / Chromatic) is deferred with the app deploy but
