@@ -2,7 +2,7 @@ import { cloneElement, useId, type ReactElement } from 'react'
 import styles from './Field.module.css'
 
 /** Props the Field injects into its single control child. */
-interface ControlProps {
+export interface ControlProps {
   id?: string
   'aria-describedby'?: string
   'aria-invalid'?: boolean
