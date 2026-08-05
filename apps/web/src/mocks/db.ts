@@ -1,4 +1,4 @@
-import type { Client } from '@/features/clients/types'
+import type { Client } from '@studioflow/contracts'
 
 /**
  * In-memory seed data for the mock API. Later replaced by the real

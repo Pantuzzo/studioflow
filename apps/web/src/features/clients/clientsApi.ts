@@ -1,5 +1,5 @@
 import { baseApi } from '@/app/baseApi'
-import type { Client } from './types'
+import type { Client } from '@studioflow/contracts'
 
 export const clientsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
