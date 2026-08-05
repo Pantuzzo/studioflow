@@ -1,0 +1,3 @@
+# Prisma's generated client — rebuilt by `prisma generate`.
+# (node_modules and .env are already covered by the root .gitignore.)
+/generated/prisma

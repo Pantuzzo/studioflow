@@ -21,5 +21,15 @@
   },
   "devDependencies": {
     "prettier": "^3.4.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "msw",
+      "prisma",
+      "unrs-resolver"
+    ]
   }
 }

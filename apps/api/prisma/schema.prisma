@@ -1,0 +1,77 @@
+// StudioFlow data model.
+//
+// Prisma 7 notes:
+// - The connection URL lives in prisma.config.ts (for the CLI), not here.
+// - At runtime the client requires a driver adapter; PrismaService passes
+//   @prisma/adapter-pg. Instantiating PrismaClient bare throws.
+// - The "prisma-client-js" generator is kept on purpose: it emits CommonJS into
+//   node_modules, whereas the newer "prisma-client" generator emits TypeScript
+//   with .ts import specifiers, which Nest's tsc build cannot emit from.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  /// argon2id hash. The plaintext password never leaves the request handler.
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions Session[]
+  clients  Client[]
+
+  @@map("users")
+}
+
+/// A browser session. The cookie carries an opaque random id; this table stores
+/// only its SHA-256, so a database leak cannot be replayed as a live session.
+model Session {
+  id String @id @default(uuid())
+
+  /// SHA-256 of the opaque session token. Never the token itself.
+  tokenHash String @unique
+
+  /// Rotation lineage. Presenting an already-revoked token means the cookie
+  /// leaked, so the whole family is revoked rather than just that one session.
+  familyId String
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime  @default(now())
+  /// Absolute timeout — a session dies at this point no matter how active it is.
+  expiresAt  DateTime
+  revokedAt  DateTime?
+
+  userAgent String?
+  ip        String?
+
+  @@index([userId])
+  @@index([familyId])
+  @@map("sessions")
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  name      String
+  company   String
+  email     String
+  /// ISO 4217 code, e.g. "USD".
+  currency  String   @db.Char(3)
+  createdAt DateTime @default(now())
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@map("clients")
+}

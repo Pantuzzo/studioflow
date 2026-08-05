@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  // rootDir pins the emit root to src, so the entry lands at dist/main.js
+  // rather than dist/src/main.js once prisma/ and test/ are excluded.
+  "compilerOptions": {
+    "rootDir": "src"
+  },
+  "include": ["src"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "test",
+    "prisma",
+    "**/*.spec.ts",
+    "**/*.e2e-spec.ts"
+  ]
+}
