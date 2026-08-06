@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { Public } from '../auth/auth.constants'
 import { PrismaService } from '../prisma/prisma.service'
 
 export interface HealthResponse {
@@ -13,6 +14,7 @@ export class HealthController {
   constructor(private readonly prisma: PrismaService) {}
 
   /** Liveness plus a real database round-trip — a health check that cannot lie. */
+  @Public()
   @Get()
   @ApiOkResponse({ description: 'Service and database status.' })
   async check(): Promise<HealthResponse> {

@@ -52,6 +52,12 @@ model Session {
   expiresAt  DateTime
   revokedAt  DateTime?
 
+  /// Why the session ended: "rotated" | "logout" | "reuse".
+  /// Only "rotated" earns the brief grace window for requests that raced the
+  /// rotation. A logout must be effective immediately, and a reuse revocation
+  /// must never be forgiven.
+  revokedReason String?
+
   userAgent String?
   ip        String?
 
