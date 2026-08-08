@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module'
 import { CsrfCookieMiddleware } from './auth/csrf-cookie.middleware'
 import { CsrfGuard } from './auth/csrf.guard'
 import { SessionAuthGuard } from './auth/session-auth.guard'
+import { ClientsModule } from './clients/clients.module'
 import { validateEnv } from './config/env'
 import { throttlerConfig } from './config/throttler.config'
 import { HealthController } from './health/health.controller'
@@ -26,6 +27,7 @@ import { PrismaModule } from './prisma/prisma.module'
     ThrottlerModule.forRoot(throttlerConfig),
     PrismaModule,
     AuthModule,
+    ClientsModule,
   ],
   controllers: [HealthController],
   providers: [
