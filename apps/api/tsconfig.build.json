@@ -3,7 +3,11 @@
   // rootDir pins the emit root to src, so the entry lands at dist/main.js
   // rather than dist/src/main.js once prisma/ and test/ are excluded.
   "compilerOptions": {
-    "rootDir": "src"
+    "rootDir": "src",
+    // Must live inside dist: `nest build` deletes dist, and a build-info file
+    // that survives that would tell tsc everything is up to date, so it would
+    // emit nothing and the build would "succeed" with no output.
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "include": ["src"],
   "exclude": [

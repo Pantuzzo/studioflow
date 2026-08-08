@@ -61,6 +61,37 @@
 
 .sidebarFooter {
   margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sf-space-3);
+}
+
+.user {
+  min-width: 0;
+}
+
+.userName {
+  font-size: var(--sf-text-sm);
+  font-weight: 600;
+  color: var(--sf-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.userEmail {
+  font-size: var(--sf-text-sm);
+  color: var(--sf-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footerActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sf-space-2);
 }
 
 .main {

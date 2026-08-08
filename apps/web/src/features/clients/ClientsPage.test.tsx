@@ -1,13 +1,20 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { db } from '@/mocks/db'
 import { server } from '@/mocks/server'
-import { clients } from '@/mocks/db'
 import { renderWithProviders } from '@/test/test-utils'
 import { ClientsPage } from './ClientsPage'
 
 describe('ClientsPage', () => {
+  beforeEach(() => {
+    // /api/clients now answers 401 to anonymous callers, exactly as the real
+    // API does. These tests are about the page, so start it signed in.
+    const user = db.findUserByEmail('ava@northwind.studio')
+    if (user) db.signIn(user.id)
+  })
+
   it('shows a loading state, then the clients from the API', async () => {
     renderWithProviders(<ClientsPage />)
 
@@ -43,7 +50,7 @@ describe('ClientsPage', () => {
     await screen.findByRole('alert')
 
     // The next request succeeds; the most-recent handler takes precedence.
-    server.use(http.get('/api/clients', () => HttpResponse.json(clients)))
+    server.use(http.get('/api/clients', () => HttpResponse.json(db.clients)))
     await user.click(screen.getByRole('button', { name: /try again/i }))
 
     expect(await screen.findByText('Northwind Studio')).toBeInTheDocument()

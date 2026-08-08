@@ -1,5 +1,9 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { Button } from '@/components/ui/Button'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { useToast } from '@/components/ui/Toast'
+import { useLogoutMutation } from '@/features/auth/authApi'
+import { useSession } from '@/features/auth/useSession'
 import styles from './AppShell.module.css'
 
 const NAV_ITEMS = [
@@ -8,6 +12,19 @@ const NAV_ITEMS = [
 ] as const
 
 export function AppShell() {
+  const { user } = useSession()
+  const [logout, { isLoading: isSigningOut }] = useLogoutMutation()
+  const { toast } = useToast()
+
+  // No navigate() needed: logout clears the session cache, so RequireAuth
+  // re-renders and sends the visitor to /login on its own.
+  async function handleSignOut() {
+    await logout()
+      .unwrap()
+      .catch(() => undefined)
+    toast({ title: 'Signed out', variant: 'success' })
+  }
+
   return (
     <div className={styles.shell}>
       <a href="#main" className="sf-skip-link">
@@ -40,7 +57,24 @@ export function AppShell() {
           </ul>
         </nav>
         <div className={styles.sidebarFooter}>
-          <ThemeToggle />
+          {user && (
+            <div className={styles.user}>
+              <p className={styles.userName}>{user.name}</p>
+              <p className={styles.userEmail}>{user.email}</p>
+            </div>
+          )}
+          <div className={styles.footerActions}>
+            <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => void handleSignOut()}
+              disabled={isSigningOut}
+              aria-busy={isSigningOut}
+            >
+              Sign out
+            </Button>
+          </div>
         </div>
       </aside>
 

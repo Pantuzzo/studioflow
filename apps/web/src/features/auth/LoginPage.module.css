@@ -1,0 +1,20 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sf-space-4);
+}
+
+.error {
+  padding: var(--sf-space-3);
+  border: 1px solid var(--sf-danger);
+  border-radius: var(--sf-radius-sm);
+  color: var(--sf-danger);
+  font-size: var(--sf-text-sm);
+}
+
+.forgot {
+  align-self: center;
+  color: var(--sf-text-muted);
+  font-size: var(--sf-text-sm);
+  text-decoration: underline;
+}
