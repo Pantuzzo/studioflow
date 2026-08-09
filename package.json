@@ -26,6 +26,7 @@
     "onlyBuiltDependencies": [
       "@prisma/client",
       "@prisma/engines",
+      "argon2",
       "esbuild",
       "msw",
       "prisma",
