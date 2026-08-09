@@ -20,6 +20,19 @@ documented.
 
 ## Backend note
 
-Weeks 1–6 run **mock-first** on MSW. From Week 7, a thin **Hono + Prisma + Postgres**
-backend takes over so persistence and Stripe work end-to-end in the live demo. The REST
-contract defined by the MSW handlers stays identical.
+**Superseded during Week 3.** The original plan was mock-first through Week 6, with a thin
+**Hono** backend arriving in Week 7. The backend was brought forward instead, and built in
+**NestJS + Prisma + Postgres** — see [ADR 0005](adr/0005-monorepo-and-nestjs-backend.md).
+
+The trigger was authentication: it is inherently full-stack, and building it against MSW
+first would have meant simulating an httpOnly cookie only to throw that work away. The
+repository became a pnpm monorepo (`apps/web`, `apps/api`, `packages/contracts`) so the Zod
+contract has a single definition shared by the API, the client and the mocks.
+
+**MSW did not go away** — it remains the web client's test double, so frontend tests never
+need Postgres, and it now mirrors the real contract rather than defining it.
+
+Week 3 therefore delivered rather more than the row above suggests: the monorepo, the shared
+contract package, the API with Swagger, cookie-session authentication with rotation and CSRF
+defence ([ADR 0006](adr/0006-session-security.md)), guarded routing, and the login, signup
+and password-reset screens.

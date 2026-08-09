@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Button } from '@/components/ui/Button'
 import { useGetClientsQuery } from './clientsApi'
 import styles from './ClientsPage.module.css'
 
@@ -16,9 +17,9 @@ export function ClientsPage() {
     content = (
       <div role="alert" className={styles.state}>
         <p>We couldn’t load your clients.</p>
-        <button type="button" onClick={() => void refetch()}>
+        <Button variant="soft" size="sm" onClick={() => void refetch()}>
           Try again
-        </button>
+        </Button>
       </div>
     )
   } else if (!clients || clients.length === 0) {

@@ -39,3 +39,46 @@ jobs:
 
       - name: Build Storybook
         run: pnpm build-storybook
+
+  # The API's e2e suite talks to a real Postgres — mocking the database would
+  # only prove the mock. Kept in its own job so the fast checks above are not
+  # held up by a container boot.
+  api-e2e:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: studioflow
+          POSTGRES_PASSWORD: studioflow
+          POSTGRES_DB: studioflow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U studioflow -d studioflow"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://studioflow:studioflow@localhost:5432/studioflow?schema=public
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply migrations
+        run: pnpm -F @studioflow/api db:deploy
+
+      - name: API e2e
+        run: pnpm -F @studioflow/api test:e2e
