@@ -3,6 +3,16 @@ import type { SerializedError } from '@reduxjs/toolkit'
 
 const FALLBACK = 'Something went wrong. Please try again.'
 
+/** HTTP status of an RTK Query error, when it has one. */
+export function apiErrorStatus(
+  error: FetchBaseQueryError | SerializedError | undefined,
+): number | undefined {
+  if (error && 'status' in error && typeof error.status === 'number') {
+    return error.status
+  }
+  return undefined
+}
+
 /**
  * Pull a human message out of an RTK Query error.
  *

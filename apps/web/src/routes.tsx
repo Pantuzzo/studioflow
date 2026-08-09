@@ -2,8 +2,10 @@ import { Navigate, type RouteObject } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { NotFoundPage } from '@/components/layout/NotFoundPage'
 import { RouteErrorPage } from '@/components/layout/RouteErrorPage'
+import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { PublicOnly } from '@/features/auth/PublicOnly'
+import { SignupPage } from '@/features/auth/SignupPage'
 import { RequireAuth } from '@/features/auth/RequireAuth'
 import { SessionGate } from '@/features/auth/SessionGate'
 import { ClientsPage } from '@/features/clients/ClientsPage'
@@ -24,7 +26,11 @@ export const routes: RouteObject[] = [
     children: [
       {
         element: <PublicOnly />,
-        children: [{ path: '/login', element: <LoginPage /> }],
+        children: [
+          { path: '/login', element: <LoginPage /> },
+          { path: '/signup', element: <SignupPage /> },
+          { path: '/forgot-password', element: <ForgotPasswordPage /> },
+        ],
       },
       {
         element: <RequireAuth />,
