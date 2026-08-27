@@ -1,0 +1,33 @@
+/*
+ * Layout shared by the feature dialogs (clients, projects). It moved here from
+ * the clients folder when the second caller appeared — which was the condition
+ * written into its original comment.
+ */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sf-space-4);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sf-space-2);
+  margin-top: var(--sf-space-2);
+}
+
+/*
+ * A destructive confirmation that looks exactly like a benign one is how people
+ * click through it. Still not a Button variant: the design system stays as it
+ * shipped until something outside a delete dialog needs this.
+ */
+.destructive {
+  background: var(--sf-danger);
+  border-color: var(--sf-danger);
+  color: #ffffff;
+}
+
+.destructive:hover:not(:disabled) {
+  filter: brightness(0.94);
+}

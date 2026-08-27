@@ -9,6 +9,17 @@ import { AppProviders } from '@/app/AppProviders'
 import { makeStore, type AppStore, type RootState } from '@/app/store'
 import { routes } from '@/routes'
 
+/**
+ * Batch notifications on a microtask instead of a frame.
+ *
+ * RTK's default batching queues through `requestAnimationFrame`, and happy-dom
+ * tears its window down between test files while such a callback can still be
+ * pending — the callback then calls `cancelAnimationFrame`, which no longer
+ * exists, and the whole run fails on an unhandled error with every test green.
+ * A microtask has always flushed by then. The app keeps the default.
+ */
+const TEST_STORE_OPTIONS = { autoBatch: { type: 'tick' } } as const
+
 export interface ExtendedRenderOptions extends Omit<RenderOptions, 'wrapper'> {
   preloadedState?: Partial<RootState>
   store?: AppStore
@@ -25,7 +36,7 @@ export function renderWithProviders(
   ui: ReactElement,
   {
     preloadedState,
-    store = makeStore(preloadedState),
+    store = makeStore(preloadedState, TEST_STORE_OPTIONS),
     route = '/',
     ...renderOptions
   }: ExtendedRenderOptions = {},
@@ -47,7 +58,7 @@ export function renderWithProviders(
 export function renderApp({
   route = '/',
   preloadedState,
-  store = makeStore(preloadedState),
+  store = makeStore(preloadedState, TEST_STORE_OPTIONS),
 }: {
   route?: string
   preloadedState?: Partial<RootState>

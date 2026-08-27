@@ -1,0 +1,125 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sf-space-5);
+}
+
+.header h1 {
+  font-size: var(--sf-text-2xl);
+}
+
+.subtitle {
+  color: var(--sf-text-muted);
+}
+
+.timerBar {
+  display: flex;
+  align-items: center;
+  gap: var(--sf-space-3);
+  padding: var(--sf-space-4);
+  background: var(--sf-surface);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  flex-wrap: wrap;
+}
+
+.timerBar[data-running] {
+  border-color: var(--sf-success);
+}
+
+.timerInput {
+  flex: 1;
+  min-width: 14rem;
+}
+
+.timerText {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.timerProject {
+  font-weight: 600;
+}
+
+.timerDescription {
+  color: var(--sf-text-muted);
+  font-size: var(--sf-text-sm);
+}
+
+/* Tabular figures, so the clock does not jitter as the digits change. */
+.clock {
+  font-family: var(--sf-font-mono);
+  font-size: var(--sf-text-xl);
+  font-variant-numeric: tabular-nums;
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sf-space-3);
+  color: var(--sf-text-muted);
+}
+
+.timesheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sf-space-3);
+}
+
+.total {
+  color: var(--sf-text-muted);
+  font-size: var(--sf-text-sm);
+}
+
+.scroller {
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--sf-surface);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+}
+
+.rows {
+  position: relative;
+  width: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--sf-space-3);
+  padding: 0 var(--sf-space-4);
+  border-bottom: 1px solid var(--sf-border);
+}
+
+.rowText {
+  flex: 1;
+  min-width: 0;
+}
+
+.rowTitle {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowMeta {
+  color: var(--sf-text-muted);
+  font-size: var(--sf-text-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowDuration {
+  font-family: var(--sf-font-mono);
+  font-variant-numeric: tabular-nums;
+}

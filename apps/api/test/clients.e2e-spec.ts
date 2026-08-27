@@ -77,8 +77,8 @@ describe('Clients (e2e)', () => {
     }
   }
 
-  async function addClient(ownerId: string, company: string): Promise<void> {
-    await prisma.client.create({
+  async function addClient(ownerId: string, company: string): Promise<string> {
+    const row = await prisma.client.create({
       data: {
         name: 'Owner Test',
         company,
@@ -87,6 +87,26 @@ describe('Clients (e2e)', () => {
         ownerId,
       },
     })
+    return row.id
+  }
+
+  /** A signed request: session cookie plus the double-submit CSRF header. */
+  function authed(
+    method: 'post' | 'patch' | 'delete',
+    url: string,
+    jar: Record<string, string>,
+  ) {
+    const agent = request(app.getHttpServer())
+    return agent[method](url)
+      .set('Cookie', cookieHeader(jar))
+      .set(CSRF_HEADER, jar[CSRF_COOKIE] ?? '')
+  }
+
+  const NEW_CLIENT = {
+    name: 'Mara Silva',
+    company: 'Atlas Works',
+    email: 'mara@atlas.works',
+    currency: 'USD',
   }
 
   it('refuses to list clients without a session', async () => {
@@ -137,6 +157,131 @@ describe('Clients (e2e)', () => {
       .set('Cookie', cookieHeader(jar))
     expect(response.status).toBe(200)
     expect(response.body).toEqual([])
+  })
+
+  it('creates a client owned by the caller', async () => {
+    const { jar } = await account()
+
+    const created = await authed('post', '/api/clients', jar).send(NEW_CLIENT)
+    expect(created.status).toBe(201)
+    expect(created.body).toMatchObject(NEW_CLIENT)
+    expect(created.body.id).toEqual(expect.any(String))
+    expect(created.body.ownerId).toBeUndefined()
+
+    const list = await request(app.getHttpServer())
+      .get('/api/clients')
+      .set('Cookie', cookieHeader(jar))
+    expect(list.body).toHaveLength(1)
+    expect(list.body[0].id).toBe(created.body.id)
+  })
+
+  it('refuses a create without a session, and one without the CSRF header', async () => {
+    // Guard order is CSRF before session (see AppModule), so the two failures
+    // have to be provoked separately — and that order is the point of the test.
+    const armed = await request(app.getHttpServer()).get('/api/health')
+    const anonymousJar = parseCookies(
+      armed.headers['set-cookie'] as string[] | undefined,
+    )
+
+    // Valid CSRF token, but nobody is signed in.
+    const anonymous = await authed('post', '/api/clients', anonymousJar).send(
+      NEW_CLIENT,
+    )
+    expect(anonymous.status).toBe(401)
+
+    // A live session is not enough: a cross-site page can make the browser send
+    // the cookie, but it cannot read it to produce the matching header.
+    const { jar } = await account()
+    const forged = await request(app.getHttpServer())
+      .post('/api/clients')
+      .set('Cookie', cookieHeader(jar))
+      .send(NEW_CLIENT)
+    expect(forged.status).toBe(403)
+  })
+
+  it('validates the body against the shared contract', async () => {
+    const { jar } = await account()
+
+    const badEmail = await authed('post', '/api/clients', jar).send({
+      ...NEW_CLIENT,
+      email: 'not-an-email',
+    })
+    expect(badEmail.status).toBe(400)
+
+    // Well-formed ISO 4217, but not a currency the product bills in.
+    const badCurrency = await authed('post', '/api/clients', jar).send({
+      ...NEW_CLIENT,
+      currency: 'JPY',
+    })
+    expect(badCurrency.status).toBe(400)
+  })
+
+  it('applies only the fields a patch carries', async () => {
+    const { jar, userId } = await account()
+    const id = await addClient(userId, 'Before Co')
+
+    const patched = await authed('patch', `/api/clients/${id}`, jar).send({
+      company: 'After Co',
+    })
+    expect(patched.status).toBe(200)
+    expect(patched.body).toMatchObject({
+      company: 'After Co',
+      name: 'Owner Test', // untouched
+      currency: 'USD',
+    })
+  })
+
+  it('rejects an empty patch rather than treating it as a no-op', async () => {
+    const { jar, userId } = await account()
+    const id = await addClient(userId, 'Empty Patch Co')
+
+    const response = await authed('patch', `/api/clients/${id}`, jar).send({})
+    expect(response.status).toBe(400)
+  })
+
+  it('deletes the caller’s own client', async () => {
+    const { jar, userId } = await account()
+    const id = await addClient(userId, 'Doomed Co')
+
+    await authed('delete', `/api/clients/${id}`, jar).expect(204)
+
+    const list = await request(app.getHttpServer())
+      .get('/api/clients')
+      .set('Cookie', cookieHeader(jar))
+    expect(list.body).toEqual([])
+  })
+
+  it('answers 404 — not 403 — for another account’s client, and leaves it alone', async () => {
+    const alice = await account()
+    const bob = await account()
+    const bobsClient = await addClient(bob.userId, 'Bob Only')
+
+    // 403 would confirm the id exists, which is what id-guessing is after.
+    const patch = await authed(
+      'patch',
+      `/api/clients/${bobsClient}`,
+      alice.jar,
+    ).send({ company: 'Stolen Co' })
+    expect(patch.status).toBe(404)
+
+    const remove = await authed(
+      'delete',
+      `/api/clients/${bobsClient}`,
+      alice.jar,
+    )
+    expect(remove.status).toBe(404)
+
+    // Bob's row survived both attempts, unchanged.
+    const survivor = await prisma.client.findUnique({
+      where: { id: bobsClient },
+    })
+    expect(survivor?.company).toBe('Bob Only')
+  })
+
+  it('answers 404 for an id that does not exist at all', async () => {
+    const { jar } = await account()
+    const response = await authed('delete', '/api/clients/cl_nope', jar)
+    expect(response.status).toBe(404)
   })
 
   it('stops returning clients once the session is revoked', async () => {

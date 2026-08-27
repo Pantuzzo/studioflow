@@ -1,0 +1,39 @@
+.content {
+  min-width: 11rem;
+  padding: var(--sf-space-1);
+  background: var(--sf-surface);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  box-shadow: var(--sf-shadow-md);
+  z-index: 50;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  padding: var(--sf-space-2) var(--sf-space-3);
+  border-radius: var(--sf-radius-sm);
+  font-size: var(--sf-text-sm);
+  color: var(--sf-text);
+  cursor: pointer;
+  user-select: none;
+  /* Radix drives focus itself; the ring would double up on the highlight. */
+  outline: none;
+}
+
+.item[data-highlighted] {
+  background: var(--sf-surface-subtle);
+}
+
+.item[data-disabled] {
+  color: var(--sf-text-muted);
+  cursor: not-allowed;
+}
+
+.item[data-destructive] {
+  color: var(--sf-danger);
+}
+
+.item[data-destructive][data-highlighted] {
+  background: color-mix(in srgb, var(--sf-danger) 12%, transparent);
+}

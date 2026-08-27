@@ -41,6 +41,73 @@ const FIXED_CLIENTS = [
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'BRL', 'CAD']
 
+/** Hung off the fixed clients, so the demo opens with projects on screen. */
+const FIXED_PROJECTS = [
+  {
+    id: 'pr_001',
+    name: 'Website relaunch',
+    status: 'active' as const,
+    clientId: 'cl_001',
+    createdAt: new Date('2026-04-02T09:00:00.000Z'),
+  },
+  {
+    id: 'pr_002',
+    name: 'Brand identity',
+    status: 'paused' as const,
+    clientId: 'cl_002',
+    createdAt: new Date('2026-05-18T13:45:00.000Z'),
+  },
+  {
+    id: 'pr_003',
+    name: 'Quarterly retainer',
+    status: 'completed' as const,
+    clientId: 'cl_003',
+    createdAt: new Date('2026-06-09T08:20:00.000Z'),
+  },
+]
+
+/** One worked example, so the editor opens with something in it. */
+const SEED_PROPOSAL = {
+  id: 'pp_001',
+  title: 'Website relaunch — proposal',
+  clientId: 'cl_001',
+  projectId: 'pr_001',
+  blocks: [
+    { id: 'bl_001', type: 'heading', text: 'Scope of work', level: 2 },
+    {
+      id: 'bl_002',
+      type: 'text',
+      text: 'A full rebuild of the marketing site, in three phases.',
+    },
+    {
+      id: 'bl_003',
+      type: 'pricing',
+      items: [
+        {
+          id: 'li_001',
+          description: 'Design',
+          quantity: 12,
+          unitPriceCents: 9500,
+        },
+        {
+          id: 'li_002',
+          description: 'Build',
+          quantity: 30,
+          unitPriceCents: 11000,
+        },
+      ],
+    },
+    {
+      id: 'bl_004',
+      type: 'terms',
+      clauses: [
+        { id: 'cl_001', text: '50% due on acceptance, 50% on delivery.' },
+        { id: 'cl_002', text: 'Two rounds of revisions per phase.' },
+      ],
+    },
+  ],
+}
+
 async function main(): Promise<void> {
   const adapter = new PrismaPg({
     connectionString: process.env['DATABASE_URL'] ?? '',
@@ -84,8 +151,47 @@ async function main(): Promise<void> {
     })
     await prisma.client.createMany({ data: generated })
 
+    // Deleting the clients above cascaded their projects away, so these are
+    // created fresh rather than upserted.
+    await prisma.project.createMany({
+      data: FIXED_PROJECTS.map((project) => ({ ...project, ownerId: user.id })),
+    })
+
+    await prisma.proposal.create({
+      data: { ...SEED_PROPOSAL, ownerId: user.id },
+    })
+
+    // A couple of finished entries, so the timesheet is not empty on arrival.
+    await prisma.timeEntry.createMany({
+      data: [
+        {
+          projectId: 'pr_001',
+          description: 'Wireframes',
+          startedAt: new Date('2026-08-16T09:00:00.000Z'),
+          endedAt: new Date('2026-08-16T11:30:00.000Z'),
+          ownerId: user.id,
+        },
+        {
+          projectId: 'pr_002',
+          description: 'Moodboard',
+          startedAt: new Date('2026-08-16T13:00:00.000Z'),
+          endedAt: new Date('2026-08-16T14:15:00.000Z'),
+          ownerId: user.id,
+        },
+      ],
+    })
+
     const total = await prisma.client.count({ where: { ownerId: user.id } })
-    console.log(`Seeded ${SEED_EMAIL} with ${total} clients.`)
+    const projects = await prisma.project.count({ where: { ownerId: user.id } })
+    const proposals = await prisma.proposal.count({
+      where: { ownerId: user.id },
+    })
+    const entries = await prisma.timeEntry.count({
+      where: { ownerId: user.id },
+    })
+    console.log(
+      `Seeded ${SEED_EMAIL}: ${total} clients, ${projects} projects, ${proposals} proposals, ${entries} time entries.`,
+    )
   } finally {
     await prisma.$disconnect()
   }

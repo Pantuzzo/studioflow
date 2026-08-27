@@ -1,6 +1,7 @@
 export * from './Button'
 export * from './Checkbox'
 export * from './Dialog'
+export * from './DropdownMenu'
 export * from './Field'
 export * from './FormField'
 export * from './Input'

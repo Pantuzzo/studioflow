@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   clientSchema,
+  createClientSchema,
   loginSchema,
   sessionSchema,
   signupFormSchema,
   signupSchema,
+  updateClientSchema,
 } from './index'
 
 const USER = {
@@ -121,5 +123,67 @@ describe('clientSchema', () => {
         createdAt: '2026-01-12T09:00:00.000Z',
       }).success,
     ).toBe(false)
+  })
+})
+
+const NEW_CLIENT = {
+  name: 'Luca Bianchi',
+  company: 'Fjord Collective',
+  email: 'luca@fjord.co',
+  currency: 'EUR',
+}
+
+describe('createClientSchema', () => {
+  it('accepts a complete client and drops server-owned fields', () => {
+    const parsed = createClientSchema.parse({
+      ...NEW_CLIENT,
+      id: 'cl_forged',
+      createdAt: '1999-01-01T00:00:00.000Z',
+    })
+    // Identity and creation time belong to the server, so a client cannot set them.
+    expect(parsed).toEqual(NEW_CLIENT)
+  })
+
+  it('trims whitespace rather than storing it', () => {
+    const parsed = createClientSchema.parse({
+      ...NEW_CLIENT,
+      name: '  Luca Bianchi  ',
+      company: ' Fjord Collective ',
+    })
+    expect(parsed.name).toBe('Luca Bianchi')
+    expect(parsed.company).toBe('Fjord Collective')
+  })
+
+  it('treats whitespace as empty', () => {
+    const result = createClientSchema.safeParse({ ...NEW_CLIENT, name: '   ' })
+    expect(result.success).toBe(false)
+    expect(result.error?.issues[0]?.message).toBe('Enter a name')
+  })
+
+  it('refuses a currency outside the supported list', () => {
+    // Well-formed ISO 4217 but not one the product bills in: reads are liberal
+    // about currency, writes are not.
+    expect(
+      createClientSchema.safeParse({ ...NEW_CLIENT, currency: 'JPY' }).success,
+    ).toBe(false)
+  })
+})
+
+describe('updateClientSchema', () => {
+  it('accepts a partial patch', () => {
+    const result = updateClientSchema.safeParse({ company: 'Fjord Studio' })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects an empty patch', () => {
+    const result = updateClientSchema.safeParse({})
+    expect(result.success).toBe(false)
+    expect(result.error?.issues[0]?.message).toBe(
+      'Provide at least one field to update',
+    )
+  })
+
+  it('still validates the fields that are present', () => {
+    expect(updateClientSchema.safeParse({ email: 'nope' }).success).toBe(false)
   })
 })

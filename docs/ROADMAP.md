@@ -18,6 +18,102 @@ documented.
 | 9    | Hardening: Lighthouse CI, Playwright e2e, axe, bundle analysis      | Measured performance + audited a11y  | "Before/after: 62 → 98 on Lighthouse (with numbers)"              |
 | 10   | Deploy, README, demo video, case-study article                      | Professional presentation            | Long-form: "I built a mini-Bonsai — what I learned"               |
 
+## Week 4 note
+
+The **Clients** half of the row above is shipped: create, edit and delete across the
+shared contract, the NestJS API and the web client, with every write applied to the RTK
+Query cache first and rolled back if the server rejects it
+([clientsApi.ts](../apps/web/src/features/clients/clientsApi.ts)).
+
+Three decisions worth naming, because they are the interesting part rather than the CRUD:
+
+- **The write contract is stricter than the read contract.** `clientSchema` accepts any
+  ISO 4217 code already in the database; `createClientSchema` only accepts the currencies
+  the product bills in. Reading and writing are not the same contract.
+- **Writes do not invalidate the list.** Invalidating would refetch and overwrite the
+  optimistic state moments later, undoing the point of it. The response body reconciles
+  the cache instead.
+- **Ownership lives in the WHERE clause**, and a client belonging to someone else answers
+  404 rather than 403 — a 403 would confirm the id exists.
+
+**Projects** completes the row: the same CRUD, the same optimistic writes, plus one
+thing clients did not have — a foreign key that arrives from the browser. A project
+carries a `clientId`, so the API checks that the client belongs to the caller before
+trusting it; without that check, anyone could hang a project off a stranger's client,
+and the error message would confirm that client exists. It answers 404.
+
+Two pieces of the week became shared rather than copied, once a second caller existed:
+the optimistic placeholder ids ([placeholderId.ts](../apps/web/src/app/placeholderId.ts))
+and the list-page and dialog styling (`apps/web/src/styles`).
+
+A stale note also fell: the design system's Select had been documented since Week 2 as
+untestable under happy-dom. Re-probed against the current versions, it is not — so both
+pickers are now exercised by the tests rather than by hand.
+
+The bigger suite then exposed a flake that had nothing to do with either feature: RTK
+batches store notifications through `requestAnimationFrame`, and happy-dom tears its
+window down between test files while such a callback can still be pending, so the run
+failed on `cancelAnimationFrame is not defined` with every test green. It reproduced
+about one run in three. The test helper now builds its store with `autoBatch: 'tick'`
+(a microtask, always flushed by teardown) and the app keeps the default; ten consecutive
+runs are clean.
+
+## Week 5 note
+
+The proposal builder is built: four block types, reordering by drag **and** by
+keyboard, undo/redo, and autosave. The decisions behind it are in
+[ADR 0007](adr/0007-proposal-documents-as-validated-json.md) and the
+[design doc](plans/2026-08-16-week-5-proposal-builder-design.md).
+
+What the week actually taught, beyond the feature:
+
+- **The accessible path is the testable path.** happy-dom has no layout, so a
+  pointer drag cannot be simulated meaningfully — but dnd-kit's keyboard sensor
+  can, given a stubbed set of rects, and the block menu needs no stub at all.
+  The version of this feature that a keyboard user can operate is the same
+  version a test runner can assert on.
+- **Autosave broke test isolation before it broke anything else.** It flushes on
+  unmount, so a save dispatched during cleanup resolved after the fixture had
+  been rewound, landing one test's document in the next test's database. The
+  fix was to drain pending requests before the reset and to reset on the way in
+  as well as the way out.
+- **Money never touches a float.** Prices are integer minor units end to end;
+  the only rounding is in `money.ts`, and it is rounded per line before summing,
+  the way an invoice does it.
+
+Not built, on purpose: rich text, PDF export (Week 7 owns it), templates,
+collaboration, and the send/accept flow — which is why the update contract
+refuses to set `status` at all rather than accepting a value nothing honours.
+
+## Week 6 note
+
+Time tracking is built, and with it the promise [ADR 0003](adr/0003-redux-toolkit-plus-mobx.md)
+made in week one: MobX, in the one module that earns it. The boundary is written
+down in [apps/web/src/features/time/README.md](../apps/web/src/features/time/README.md).
+
+The boundary came out narrower than the ADR implied, which is the honest result:
+
+- **MobX owns three things.** Which entry is running, what second it is, and the
+  description being typed before it is saved. It never calls the network.
+- **RTK Query owns everything else**, including starting and stopping, which are
+  ordinary mutations. One method, `adopt`, is the only way server state crosses.
+- **Elapsed time is derived, not accumulated.** It is `now - startedAt`, so a
+  tab that was asleep is never behind, and adopting a timer that started ten
+  minutes ago reads ten minutes with no ticks having happened.
+
+Two more decisions worth naming:
+
+- **The server owns the clock.** Starting a timer sends no timestamp; the API
+  stamps it. A browser with a wrong clock cannot bill an hour it did not work,
+  and there is an e2e test that sends 1999 and asserts the entry starts now.
+- **There is no duration column.** Duration is the two timestamps. Three fields
+  that can disagree eventually do, and an invoice reads the wrong one.
+
+The virtualized timesheet needed a stand-in for layout in tests: the virtualizer
+sizes its window from `offsetHeight`, and happy-dom reports zero for every
+element, so it rendered no rows at all. That was found by a probe of the
+installed source rather than guessed at, after two wrong fixes.
+
 ## Backend note
 
 **Superseded during Week 3.** The original plan was mock-first through Week 6, with a thin
