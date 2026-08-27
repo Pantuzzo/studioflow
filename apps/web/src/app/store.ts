@@ -14,7 +14,19 @@ const rootReducer = combineReducers({
 /** Derived from the reducer, not from a store instance, so preloadedState types. */
 export type RootState = ReturnType<typeof rootReducer>
 
-export function makeStore(preloadedState?: Partial<RootState>) {
+export interface MakeStoreOptions {
+  /**
+   * Handed to RTK's default enhancers. The app leaves it alone and keeps the
+   * default requestAnimationFrame batching; only the test helper overrides it,
+   * for a reason documented in `src/test/test-utils.tsx`.
+   */
+  autoBatch?: false | { type: 'tick' }
+}
+
+export function makeStore(
+  preloadedState?: Partial<RootState>,
+  options?: MakeStoreOptions,
+) {
   const listener = createListenerMiddleware()
 
   // A 401 anywhere means the cached session is a lie. Re-checking it is what
@@ -31,6 +43,10 @@ export function makeStore(preloadedState?: Partial<RootState>) {
     preloadedState,
     middleware: (getDefault) =>
       getDefault().prepend(listener.middleware).concat(baseApi.middleware),
+    enhancers: (getDefault) =>
+      options?.autoBatch === undefined
+        ? getDefault()
+        : getDefault({ autoBatch: options.autoBatch }),
   })
 
   // Enables refetchOnFocus / refetchOnReconnect behaviours.
