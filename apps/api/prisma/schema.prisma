@@ -25,8 +25,11 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  sessions Session[]
-  clients  Client[]
+  sessions  Session[]
+  clients   Client[]
+  projects  Project[]
+  proposals   Proposal[]
+  timeEntries TimeEntry[]
 
   @@map("users")
 }
@@ -78,6 +81,115 @@ model Client {
   ownerId String
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
+  projects  Project[]
+  proposals Proposal[]
+
   @@index([ownerId])
   @@map("clients")
+}
+
+/// Lowercase members on purpose: they cross the wire exactly as written, so the
+/// contract needs no translation layer between the database and the client.
+enum ProjectStatus {
+  active
+  paused
+  completed
+
+  @@map("project_status")
+}
+
+/// A piece of work done for a client. Deleting the client takes its projects
+/// with it — a project without a client is not a thing the product has.
+model Project {
+  id        String        @id @default(cuid())
+  name      String
+  status    ProjectStatus @default(active)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  /// Denormalised owner. It duplicates client.ownerId, and it earns that:
+  /// every query is scoped by owner, and joining through clients to prove
+  /// ownership on each one is a footgun waiting for the query someone forgets.
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  proposals   Proposal[]
+  timeEntries TimeEntry[]
+
+  @@index([ownerId])
+  @@index([clientId])
+  @@map("projects")
+}
+
+enum ProposalStatus {
+  draft
+  sent
+  accepted
+  declined
+
+  @@map("proposal_status")
+}
+
+/// A proposal document.
+///
+/// `blocks` is jsonb rather than a table of rows: the document is read and
+/// written whole, and its blocks have no identity worth querying on their own.
+/// The shape is not freeform — every write is validated against the Zod union
+/// in packages/contracts before it reaches this column. See ADR 0007.
+model Proposal {
+  id        String         @id @default(cuid())
+  title     String
+  status    ProposalStatus @default(draft)
+  blocks    Json           @default("[]")
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  /// Optional: not every proposal concerns a project that already exists.
+  /// Deleting the project keeps the proposal and forgets the link, because the
+  /// document is the thing of value here.
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([clientId])
+  @@index([projectId])
+  @@map("proposals")
+}
+
+/// A stretch of time worked on a project.
+///
+/// There is no duration column. Duration is `endedAt - startedAt`, and a row
+/// with no `endedAt` is a timer that is still running. Three fields that can
+/// disagree would eventually disagree, and an invoice would read the wrong one.
+///
+/// "At most one running entry per account" is enforced in the service rather
+/// than here: Postgres can express it as a partial unique index, but Prisma
+/// cannot describe one, so it would be invisible to the schema and dropped by
+/// the next migration that did not know about it.
+model TimeEntry {
+  id          String    @id @default(cuid())
+  description String    @default("")
+  startedAt   DateTime
+  endedAt     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([projectId])
+  @@map("time_entries")
 }
