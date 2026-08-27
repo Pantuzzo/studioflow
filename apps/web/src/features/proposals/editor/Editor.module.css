@@ -1,0 +1,160 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sf-space-4);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.block {
+  background: var(--sf-surface);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  overflow: hidden;
+}
+
+.block[data-dragging] {
+  opacity: 0.4;
+}
+
+.blockHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--sf-space-2);
+  padding: var(--sf-space-2) var(--sf-space-3);
+  background: var(--sf-surface-subtle);
+  border-bottom: 1px solid var(--sf-border);
+}
+
+.handle {
+  display: inline-grid;
+  place-items: center;
+  padding: var(--sf-space-1) var(--sf-space-2);
+  border: none;
+  border-radius: var(--sf-radius-sm);
+  background: transparent;
+  color: var(--sf-text-muted);
+  cursor: grab;
+}
+
+.handle:hover {
+  background: var(--sf-surface);
+  color: var(--sf-text);
+}
+
+.handle:active {
+  cursor: grabbing;
+}
+
+.blockTitle {
+  flex: 1;
+  font-size: var(--sf-text-sm);
+  font-weight: 600;
+  color: var(--sf-text);
+}
+
+.blockPosition {
+  font-weight: 400;
+  color: var(--sf-text-muted);
+}
+
+.blockBody {
+  padding: var(--sf-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sf-space-4);
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sf-space-4);
+  align-items: start;
+}
+
+/* The ghost that follows the pointer during a drag. */
+.dragGhost {
+  padding: var(--sf-space-3) var(--sf-space-4);
+  background: var(--sf-surface);
+  border: 1px solid var(--sf-primary);
+  border-radius: var(--sf-radius-md);
+  box-shadow: var(--sf-shadow-md);
+  font-size: var(--sf-text-sm);
+  font-weight: 600;
+  cursor: grabbing;
+}
+
+/* --- pricing block --- */
+
+.pricing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sf-space-3);
+}
+
+.pricingTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.pricingTable th,
+.pricingTable td {
+  text-align: left;
+  padding: var(--sf-space-2);
+  border-bottom: 1px solid var(--sf-border);
+  vertical-align: middle;
+}
+
+.pricingTable thead th {
+  font-size: var(--sf-text-sm);
+  color: var(--sf-text-muted);
+  font-weight: 600;
+}
+
+.pricingTable tfoot th,
+.pricingTable tfoot td {
+  border-bottom: none;
+  padding-top: var(--sf-space-3);
+}
+
+.numeric {
+  min-width: 6rem;
+  text-align: right;
+}
+
+/* --- terms block --- */
+
+.terms {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sf-space-3);
+}
+
+.clauseList {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sf-space-2);
+  padding-left: var(--sf-space-5);
+  margin: 0;
+}
+
+.clause {
+  display: flex;
+  align-items: center;
+  gap: var(--sf-space-2);
+}
+
+@media (max-width: 40rem) {
+  .fieldRow {
+    grid-template-columns: 1fr;
+  }
+
+  .pricingTable {
+    display: block;
+    overflow-x: auto;
+  }
+}
