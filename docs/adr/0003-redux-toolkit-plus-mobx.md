@@ -21,5 +21,9 @@ entries), where observable, mutable models are the most ergonomic fit.
   requirement) with a genuine, defensible reason rather than for show.
 - Negative: two state paradigms in one codebase — a clear module boundary is required
   so they don't leak into each other.
-- Follow-ups: document the boundary in the time-tracking feature's README when built
-  (Week 6).
+- Follow-ups: ~~document the boundary in the time-tracking feature's README when
+  built (Week 6)~~ — done, in
+  [apps/web/src/features/time/README.md](../../apps/web/src/features/time/README.md).
+  The boundary landed narrower than this ADR implied: MobX owns the running
+  entry, the current second and the unsaved description, and nothing else. Every
+  request still goes through RTK Query.
