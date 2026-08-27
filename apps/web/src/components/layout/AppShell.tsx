@@ -9,6 +9,9 @@ import styles from './AppShell.module.css'
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/clients', label: 'Clients' },
+  { to: '/projects', label: 'Projects' },
+  { to: '/proposals', label: 'Proposals' },
+  { to: '/time', label: 'Time' },
 ] as const
 
 export function AppShell() {

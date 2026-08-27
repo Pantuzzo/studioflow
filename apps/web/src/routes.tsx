@@ -10,6 +10,10 @@ import { RequireAuth } from '@/features/auth/RequireAuth'
 import { SessionGate } from '@/features/auth/SessionGate'
 import { ClientsPage } from '@/features/clients/ClientsPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
+import { ProjectsPage } from '@/features/projects/ProjectsPage'
+import { ProposalEditorPage } from '@/features/proposals/ProposalEditorPage'
+import { ProposalsPage } from '@/features/proposals/ProposalsPage'
+import { TimeTrackingPage } from '@/features/time/TimeTrackingPage'
 
 /**
  * One route tree, used by createBrowserRouter in the app and createMemoryRouter
@@ -42,6 +46,10 @@ export const routes: RouteObject[] = [
               { index: true, element: <Navigate to="/dashboard" replace /> },
               { path: 'dashboard', element: <DashboardPage /> },
               { path: 'clients', element: <ClientsPage /> },
+              { path: 'projects', element: <ProjectsPage /> },
+              { path: 'proposals', element: <ProposalsPage /> },
+              { path: 'proposals/:id', element: <ProposalEditorPage /> },
+              { path: 'time', element: <TimeTrackingPage /> },
             ],
           },
         ],
