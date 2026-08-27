@@ -1,0 +1,99 @@
+/*
+ * The shape every list page shares: a header with a primary action, the
+ * loading/error/empty states, and a table with row actions. Extracted from the
+ * clients page when projects arrived needing the same thing, character for
+ * character.
+ */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sf-space-6);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sf-space-4);
+  flex-wrap: wrap;
+}
+
+.header h1 {
+  font-size: var(--sf-text-2xl);
+}
+
+.subtitle {
+  color: var(--sf-text-muted);
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sf-space-3);
+  color: var(--sf-text-muted);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--sf-surface);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  overflow: hidden;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: var(--sf-space-3) var(--sf-space-4);
+  border-bottom: 1px solid var(--sf-border);
+}
+
+.table th {
+  background: var(--sf-surface-subtle);
+  font-size: var(--sf-text-sm);
+  color: var(--sf-text-muted);
+  font-weight: 600;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* A row that exists optimistically, waiting on the server to confirm it. */
+.table tbody tr[data-pending] {
+  opacity: 0.6;
+}
+
+.rowActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sf-space-1);
+}
+
+/*
+ * Status pill. The colour is a second signal, never the only one — the label
+ * is always there, which is what keeps it readable without colour vision.
+ */
+.status {
+  display: inline-block;
+  padding: 0 var(--sf-space-2);
+  border-radius: 999px;
+  font-size: var(--sf-text-sm);
+  line-height: 1.6;
+  border: 1px solid var(--sf-border);
+  background: var(--sf-surface-subtle);
+  color: var(--sf-text-muted);
+}
+
+.status[data-status='active'] {
+  border-color: color-mix(in srgb, var(--sf-success) 40%, transparent);
+  color: var(--sf-success);
+}
+
+.status[data-status='completed'] {
+  border-color: color-mix(in srgb, var(--sf-primary) 40%, transparent);
+  color: var(--sf-primary);
+}
