@@ -155,6 +155,44 @@ stylesheet, rather than a bundled generator. The engine is excellent, it
 respects the reader's paper size, and it needs no server; the cost is that the
 print view is a real view that has to be maintained.
 
+## Week 8 note
+
+Payments with Stripe, in test mode. The feature is a redirect and a webhook;
+the work is the states.
+
+**`checkout.session.completed` is not a payment.** It fires when the customer
+finishes the form. For a card that is the same instant as the money arriving;
+for a bank debit it is days earlier. Treating the two as one marks unpaid
+invoices paid, so there is a `processing` state for money that is on its way,
+and `paid` is only ever written by `async_payment_succeeded` or by a completed
+session that Stripe itself says was already paid.
+
+**A person cannot mark an invoice paid.** The update contract accepts `draft`,
+`sent` and `void`; the money states are absent from it entirely. Without that,
+the whole integration would be decorative.
+
+**Events arrive twice, and out of order.** Stripe retries, and a human can
+replay one from the dashboard. Every event id is written to a table first, and
+a duplicate collides on the primary key and is dropped, which turns "handlers
+must be idempotent" into "handlers run once". A late `expired` arriving after
+the payment landed cannot un-pay the invoice, because `paid` is terminal.
+
+**The webhook is the one route exempt from CSRF**, through an explicit
+`@SkipCsrf()` rather than by being public. Login and signup are public too and
+keep their CSRF check; the exemption is only correct for a route that carries
+no cookie and proves itself another way, and this one verifies a signature over
+the raw request bytes before doing anything at all. `main.ts` now boots with
+`rawBody: true`, because a signature computed over re-serialised JSON never
+matches.
+
+One integration detail worth knowing: Stripe's `quantity` is an integer and
+hours are not. Each invoice line is sent as a single item priced at its own
+total, so nobody is charged a rounded number of hours.
+
+Not built: subscriptions, refunds, partial payments, and Stripe Elements. Card
+fields never render in this app, which is the difference between an integration
+that needs a PCI conversation and one that does not.
+
 ## Backend note
 
 **Superseded during Week 3.** The original plan was mock-first through Week 6, with a thin

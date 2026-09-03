@@ -70,7 +70,7 @@ The recruiter's-eye view — each entry maps to real code.
 | Architecture Decision Records                                               | [docs/adr](docs/adr)                                                                                                  |
 | CI gates: typecheck, lint, format, test, build, Storybook, API e2e          | [ci.yml](.github/workflows/ci.yml)                                                                                    |
 
-Still to come: Stripe, and a measured performance pass. See the [roadmap](docs/ROADMAP.md).
+Still to come: a measured performance pass, then deploy and the case study. See the [roadmap](docs/ROADMAP.md).
 
 ## Getting started
 
