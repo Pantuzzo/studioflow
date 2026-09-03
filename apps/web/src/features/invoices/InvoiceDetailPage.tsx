@@ -1,8 +1,9 @@
 import {
-  INVOICE_STATUSES,
+  MANUAL_INVOICE_STATUSES,
   invoiceLineTotalCents,
   invoiceTotalCents,
   type InvoiceStatus,
+  type ManualInvoiceStatus,
 } from '@studioflow/contracts'
 import { Link, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
@@ -16,18 +17,27 @@ import {
 } from '@/i18n/format'
 import styles from './InvoiceDetailPage.module.css'
 import { useGetInvoiceQuery, useUpdateInvoiceMutation } from './invoicesApi'
+import { useCreateCheckoutMutation } from './paymentsApi'
 
 const STATUS_LABELS: Record<InvoiceStatus, string> = {
   draft: 'Draft',
   sent: 'Sent',
+  processing: 'Processing',
   paid: 'Paid',
   void: 'Void',
 }
 
-const statusOptions = INVOICE_STATUSES.map((value) => ({
+/**
+ * Only the statuses a person may set. `processing` and `paid` are claims about
+ * money and belong to the webhook, so they are shown as a badge and never
+ * offered as a choice.
+ */
+const statusOptions = MANUAL_INVOICE_STATUSES.map((value) => ({
   value,
   label: STATUS_LABELS[value],
 }))
+
+const SETTLED = new Set<InvoiceStatus>(['processing', 'paid'])
 
 /**
  * The invoice itself, and the thing that gets printed.
@@ -49,6 +59,8 @@ export function InvoiceDetailPage() {
     skip: !id,
   })
   const [updateInvoice] = useUpdateInvoiceMutation()
+  const [createCheckout, { isLoading: isCheckingOut }] =
+    useCreateCheckoutMutation()
   const { toast } = useToast()
 
   if (isLoading) {
@@ -76,11 +88,26 @@ export function InvoiceDetailPage() {
     try {
       await updateInvoice({
         id,
-        patch: { status: status as InvoiceStatus },
+        patch: { status: status as ManualInvoiceStatus },
       }).unwrap()
     } catch {
       toast({
         title: 'We couldn’t update that invoice',
+        variant: 'error',
+      })
+    }
+  }
+
+  async function pay() {
+    try {
+      const { url } = await createCheckout(id).unwrap()
+      // Stripe hosts the page, so this leaves the app entirely. No card field
+      // ever renders here, which is the point of using Checkout.
+      window.location.assign(url)
+    } catch {
+      toast({
+        title: 'We couldn’t start that payment',
+        description: 'Nothing was charged.',
         variant: 'error',
       })
     }
@@ -92,12 +119,30 @@ export function InvoiceDetailPage() {
       <div className={styles.toolbar}>
         <Link to="/invoices">All invoices</Link>
         <div className={styles.toolbarActions}>
-          <Select
-            aria-label="Status"
-            options={statusOptions}
-            value={invoice.status}
-            onValueChange={(value) => void setStatus(value)}
-          />
+          {/*
+            The badge is the truth; the picker is only for the transitions a
+            person owns. Once money is in flight there is nothing to choose.
+          */}
+          <span className={styles.status} data-status={invoice.status}>
+            {STATUS_LABELS[invoice.status]}
+          </span>
+          {!SETTLED.has(invoice.status) && (
+            <Select
+              aria-label="Status"
+              options={statusOptions}
+              value={invoice.status}
+              onValueChange={(value) => void setStatus(value)}
+            />
+          )}
+          {invoice.status !== 'paid' && invoice.status !== 'void' && (
+            <Button
+              variant="soft"
+              onClick={() => void pay()}
+              disabled={isCheckingOut}
+            >
+              {isCheckingOut ? 'Opening…' : 'Pay this invoice'}
+            </Button>
+          )}
           <Button onClick={() => window.print()}>Print or save as PDF</Button>
         </div>
       </div>
@@ -111,6 +156,9 @@ export function InvoiceDetailPage() {
               Due {formatDate(invoice.dueAt)} (
               {formatRelativeDays(invoice.dueAt)})
             </p>
+            {invoice.paidAt && (
+              <p className={styles.meta}>Paid {formatDate(invoice.paidAt)}</p>
+            )}
           </div>
           <div className={styles.billTo}>
             <p className={styles.billToLabel}>Billed to</p>

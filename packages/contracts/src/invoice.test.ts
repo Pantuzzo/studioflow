@@ -27,6 +27,7 @@ const INVOICE = {
   lines: [LINE],
   issuedAt: '2026-08-17T09:00:00.000Z',
   dueAt: '2026-08-31T09:00:00.000Z',
+  paidAt: null,
   createdAt: '2026-08-17T09:00:00.000Z',
   updatedAt: '2026-08-17T09:00:00.000Z',
 }
@@ -144,8 +145,20 @@ describe('generateInvoiceSchema', () => {
 })
 
 describe('updateInvoiceSchema', () => {
-  it('accepts a status change', () => {
-    expect(updateInvoiceSchema.safeParse({ status: 'paid' }).success).toBe(true)
+  it('accepts the statuses a person may set', () => {
+    for (const status of ['draft', 'sent', 'void']) {
+      expect(updateInvoiceSchema.safeParse({ status }).success).toBe(true)
+    }
+  })
+
+  it('refuses the statuses that are claims about money', () => {
+    // Only a signed webhook may say an invoice is paid or on its way.
+    expect(updateInvoiceSchema.safeParse({ status: 'paid' }).success).toBe(
+      false,
+    )
+    expect(
+      updateInvoiceSchema.safeParse({ status: 'processing' }).success,
+    ).toBe(false)
   })
 
   it('will not let anyone edit the lines', () => {

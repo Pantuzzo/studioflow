@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '@/mocks/db'
 import { server } from '@/mocks/server'
 import { renderApp } from '@/test/test-utils'
@@ -156,17 +156,25 @@ describe('InvoiceDetailPage', () => {
     expect(screen.getAllByText(/237[.,]50/)).toHaveLength(2)
   })
 
-  it('changes the status through the picker', async () => {
+  it('changes the status through the picker, within what a person may set', async () => {
     const { user } = await renderInvoices('/invoices/in_001')
     await screen.findByText('Invoice #1')
 
-    await chooseOption(
-      user,
-      screen.getByRole('combobox', { name: 'Status' }),
-      'Paid',
-    )
+    const picker = screen.getByRole('combobox', { name: 'Status' })
+    await chooseOption(user, picker, 'Void')
+    await waitFor(() => expect(db.findInvoice('in_001')?.status).toBe('void'))
+  })
 
-    await waitFor(() => expect(db.findInvoice('in_001')?.status).toBe('paid'))
+  it('does not offer paid as something to choose', async () => {
+    const { user } = await renderInvoices('/invoices/in_001')
+    await screen.findByText('Invoice #1')
+
+    await user.click(screen.getByRole('combobox', { name: 'Status' }))
+    await screen.findByRole('option', { name: 'Sent' })
+    // Paid is a claim about money. Only a signed webhook makes it.
+    expect(
+      screen.queryByRole('option', { name: 'Paid' }),
+    ).not.toBeInTheDocument()
   })
 
   it('offers printing rather than a generated file', async () => {
@@ -175,6 +183,57 @@ describe('InvoiceDetailPage', () => {
     expect(
       await screen.findByRole('button', { name: /print or save as pdf/i }),
     ).toBeInTheDocument()
+  })
+})
+
+describe('paying an invoice', () => {
+  it('sends the payer to Stripe rather than asking for a card here', async () => {
+    const assign = vi
+      .spyOn(window.location, 'assign')
+      .mockImplementation(() => {})
+    const { user } = await renderInvoices('/invoices/in_001')
+    await screen.findByText('Invoice #1')
+
+    await user.click(screen.getByRole('button', { name: /pay this invoice/i }))
+
+    // No card field renders in this app, which is the point of hosted Checkout.
+    await waitFor(() =>
+      expect(assign).toHaveBeenCalledWith(
+        expect.stringContaining('checkout.stripe.test'),
+      ),
+    )
+    assign.mockRestore()
+  })
+
+  it('shows a paid invoice as paid, and offers neither payment nor a status', async () => {
+    db.updateInvoice('in_001', {
+      status: 'paid',
+      paidAt: '2026-08-20T10:00:00.000Z',
+    })
+    await renderInvoices('/invoices/in_001')
+    await screen.findByText('Invoice #1')
+
+    expect(screen.getByText('Paid')).toBeInTheDocument()
+    // Paying twice is not on offer, and the status is not a choice any more:
+    // it is a claim about money that only the webhook may make.
+    expect(
+      screen.queryByRole('button', { name: /pay this invoice/i }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('combobox', { name: 'Status' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows money that is on its way as processing', async () => {
+    db.updateInvoice('in_001', { status: 'processing' })
+    await renderInvoices('/invoices/in_001')
+    await screen.findByText('Invoice #1')
+
+    // A completed checkout is not a received payment for a bank debit.
+    expect(screen.getByText('Processing')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('combobox', { name: 'Status' }),
+    ).not.toBeInTheDocument()
   })
 })
 

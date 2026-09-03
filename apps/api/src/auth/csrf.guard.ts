@@ -5,8 +5,10 @@ import {
   Injectable,
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { Reflector } from '@nestjs/core'
 import type { Request } from 'express'
 import type { Env } from '../config/env'
+import { SKIP_CSRF_KEY } from './auth.constants'
 import { CSRF_HEADER, csrfCookieName, safeEquals } from './session.util'
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
@@ -25,11 +27,22 @@ const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
  */
 @Injectable()
 export class CsrfGuard implements CanActivate {
-  constructor(private readonly config: ConfigService<Env, true>) {}
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly config: ConfigService<Env, true>,
+  ) {}
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>()
     if (!MUTATING_METHODS.has(request.method)) return true
+
+    // A route that carries no cookie and authenticates itself by signature has
+    // no CSRF exposure to defend. It must then actually do that; see SkipCsrf.
+    const skip = this.reflector.getAllAndOverride<boolean>(SKIP_CSRF_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ])
+    if (skip) return true
 
     const allowedOrigin = this.config.get('WEB_ORIGIN', { infer: true })
     const origin = request.headers.origin

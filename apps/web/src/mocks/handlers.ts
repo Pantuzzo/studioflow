@@ -393,6 +393,7 @@ export const handlers = [
       dueAt: new Date(
         issuedAt.getTime() + (parsed.data.dueInDays ?? 14) * 86_400_000,
       ).toISOString(),
+      paidAt: null,
       createdAt: issuedAt.toISOString(),
       updatedAt: issuedAt.toISOString(),
     })
@@ -417,5 +418,23 @@ export const handlers = [
     return db.deleteInvoice(String(params.id))
       ? new HttpResponse(null, { status: 204 })
       : notFound('Invoice')
+  }),
+
+  http.post('/api/invoices/:id/checkout', ({ params }) => {
+    if (!db.signedInUser) return unauthorized()
+    const invoice = db.findInvoice(String(params.id))
+    if (!invoice) return notFound('Invoice')
+    if (invoice.status === 'paid' || invoice.status === 'void') {
+      return HttpResponse.json(
+        { message: `Cannot take payment for a ${invoice.status} invoice` },
+        { status: 409 },
+      )
+    }
+    // The mock stops at the redirect: what happens on Stripe's page, and the
+    // webhook that follows, are not the browser's business at all.
+    return HttpResponse.json(
+      { url: `https://checkout.stripe.test/c/pay/${invoice.id}` },
+      { status: 201 },
+    )
   }),
 ]
