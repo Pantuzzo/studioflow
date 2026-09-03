@@ -114,6 +114,47 @@ sizes its window from `offsetHeight`, and happy-dom reports zero for every
 element, so it rendered no rows at all. That was found by a probe of the
 installed source rather than guessed at, after two wrong fixes.
 
+## Week 7 note
+
+Invoices are generated from tracked time, and the week's real subject is what
+an invoice _is_: a snapshot, not a view.
+
+- **Everything printed is frozen at generation.** The client's name, company and
+  currency are copied onto the invoice, and the lines carry their own
+  descriptions. Renaming a client or moving them to another currency next month
+  cannot rewrite what was billed last month, and there are e2e tests that rename
+  and re-read to prove it.
+- **The lines cannot be edited.** Correcting an issued invoice is a credit note,
+  so the update contract accepts only a status and a due date. A draft can be
+  deleted and regenerated instead.
+- **An hour cannot be billed twice.** Billing stamps each time entry with the
+  invoice id, and generation only considers entries with none. Deleting an
+  invoice releases its hours rather than destroying them.
+- **Invoice numbers come from a counter, never from a count of rows.** Counting
+  hands out the same number twice under concurrency, and hands out a deleted
+  invoice's number again. A number is a permanent reference, so burning one is
+  correct.
+
+On the i18n side, `apps/web/src/i18n` is the only place the app formats anything
+locale-dependent, and it exists to enforce one rule: never build a localised
+string by concatenation.
+
+- `Intl.PluralRules` decides "1 hour" against "1.5 hours". The plural category
+  for 1.5 is "other" even in English, which a hand-rolled `n === 1` gets wrong.
+- `formatMoney` asks `Intl` how many minor units the currency has rather than
+  dividing by 100. Yen has none and dinar has three; the old helper in the
+  proposal editor divided by 100 unconditionally and has been folded into this
+  one.
+- RTL is a toggle next to the theme switch, not a claim. Every physical CSS
+  direction in the app was replaced with its logical counterpart
+  (`inset-inline-start`, `border-inline-end`, `text-align: start`), so flipping
+  `dir` on `<html>` mirrors the layout. What is not claimed: translated copy.
+
+PDF is the browser's own print pipeline behind a dedicated `@media print`
+stylesheet, rather than a bundled generator. The engine is excellent, it
+respects the reader's paper size, and it needs no server; the cost is that the
+print view is a real view that has to be maintained.
+
 ## Backend note
 
 **Superseded during Week 3.** The original plan was mock-first through Week 6, with a thin
