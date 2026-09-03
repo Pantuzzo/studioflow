@@ -21,6 +21,7 @@ function toContract(row: ProjectRow): Project {
     // The Prisma enum's members are the contract's values, so there is nothing
     // to translate here — that is why they are lowercase in the schema.
     status: row.status,
+    hourlyRateCents: row.hourlyRateCents,
     clientId: row.clientId,
     clientName: row.client.name,
     createdAt: row.createdAt.toISOString(),
