@@ -1,7 +1,7 @@
 .viewport {
   position: fixed;
   bottom: 0;
-  right: 0;
+  inset-inline-end: 0;
   display: flex;
   flex-direction: column;
   gap: var(--sf-space-2);
@@ -21,20 +21,20 @@
   padding: var(--sf-space-3) var(--sf-space-4);
   background: var(--sf-surface);
   border: 1px solid var(--sf-border);
-  border-left: 3px solid var(--sf-primary);
+  border-inline-start: 3px solid var(--sf-primary);
   border-radius: var(--sf-radius-md);
   box-shadow: var(--sf-shadow-md);
   animation: toast-in var(--sf-duration-fast) var(--sf-ease);
 }
 
 .default {
-  border-left-color: var(--sf-primary);
+  border-inline-start-color: var(--sf-primary);
 }
 .success {
-  border-left-color: var(--sf-success);
+  border-inline-start-color: var(--sf-success);
 }
 .error {
-  border-left-color: var(--sf-danger);
+  border-inline-start-color: var(--sf-danger);
 }
 
 .title {

@@ -46,7 +46,7 @@
 
 .table th,
 .table td {
-  text-align: left;
+  text-align: start;
   padding: var(--sf-space-3) var(--sf-space-4);
   border-bottom: 1px solid var(--sf-border);
 }

@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { DirectionToggle } from '@/i18n/DirectionToggle'
 import { useToast } from '@/components/ui/Toast'
 import { useLogoutMutation } from '@/features/auth/authApi'
 import { useSession } from '@/features/auth/useSession'
@@ -12,6 +13,7 @@ const NAV_ITEMS = [
   { to: '/projects', label: 'Projects' },
   { to: '/proposals', label: 'Proposals' },
   { to: '/time', label: 'Time' },
+  { to: '/invoices', label: 'Invoices' },
 ] as const
 
 export function AppShell() {
@@ -68,6 +70,7 @@ export function AppShell() {
           )}
           <div className={styles.footerActions}>
             <ThemeToggle />
+            <DirectionToggle />
             <Button
               variant="ghost"
               size="sm"

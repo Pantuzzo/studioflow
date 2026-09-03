@@ -6,13 +6,12 @@ import type { LineItem } from '@studioflow/contracts'
  * so rounding happens once, in the open.
  */
 
-/** Format minor units in the client's currency. */
-export function formatMoney(cents: number, currency: string): string {
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency,
-  }).format(cents / 100)
-}
+/**
+ * Formatting lives in the i18n module, not here. This file had its own copy
+ * that divided by 100 unconditionally, which is wrong for any currency whose
+ * minor unit is not a hundredth. Re-exported so existing callers are unchanged.
+ */
+export { formatMoney } from '@/i18n/format'
 
 /** What the price input shows: major units, always two decimals. */
 export function moneyInputValue(cents: number): string {
