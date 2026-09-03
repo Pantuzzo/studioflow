@@ -1,10 +1,34 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
+import { visualizer } from 'rollup-plugin-visualizer'
 import path from 'node:path'
+
+/**
+ * `ANALYZE=1 pnpm build` writes a treemap and the raw module sizes next to the
+ * bundle. Off by default: a normal build should not pay for instrumentation,
+ * and CI should not produce an artefact nobody reads.
+ */
+const analyze = process.env['ANALYZE'] === '1'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    ...(analyze
+      ? [
+          visualizer({
+            filename: 'dist/bundle-stats.html',
+            gzipSize: true,
+            brotliSize: true,
+          }),
+          visualizer({
+            filename: 'dist/bundle-stats.json',
+            template: 'raw-data',
+            gzipSize: true,
+          }),
+        ]
+      : []),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
