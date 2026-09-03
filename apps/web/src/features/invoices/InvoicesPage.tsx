@@ -12,6 +12,8 @@ import { useDeleteInvoiceMutation, useGetInvoicesQuery } from './invoicesApi'
 const STATUS_LABELS: Record<InvoiceSummary['status'], string> = {
   draft: 'Draft',
   sent: 'Sent',
+  // Money that is on its way but has not landed. See the invoice contract.
+  processing: 'Processing',
   paid: 'Paid',
   void: 'Void',
 }

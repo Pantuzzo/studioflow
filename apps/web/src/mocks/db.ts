@@ -188,6 +188,7 @@ const SEED_INVOICES: readonly StoredInvoice[] = [
     ],
     issuedAt: '2026-08-17T09:00:00.000Z',
     dueAt: '2026-08-31T09:00:00.000Z',
+    paidAt: null,
     createdAt: '2026-08-17T09:00:00.000Z',
     updatedAt: '2026-08-17T09:00:00.000Z',
   },
