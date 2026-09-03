@@ -1,0 +1,157 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sf-space-5);
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sf-space-3);
+  color: var(--sf-text-muted);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sf-space-4);
+  flex-wrap: wrap;
+}
+
+.toolbar a {
+  text-decoration: underline;
+  color: var(--sf-text-muted);
+}
+
+.toolbarActions {
+  display: flex;
+  align-items: center;
+  gap: var(--sf-space-2);
+}
+
+.document {
+  background: var(--sf-surface);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  padding: var(--sf-space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sf-space-5);
+}
+
+.documentHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sf-space-5);
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: var(--sf-text-xl);
+}
+
+.meta {
+  color: var(--sf-text-muted);
+  font-size: var(--sf-text-sm);
+}
+
+/* `end` rather than `right`, so the block follows the writing direction. */
+.billTo {
+  text-align: end;
+}
+
+.billToLabel {
+  font-size: var(--sf-text-sm);
+  color: var(--sf-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.billToName {
+  font-weight: 700;
+}
+
+.lines {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.lines th,
+.lines td {
+  text-align: start;
+  padding: var(--sf-space-3) var(--sf-space-2);
+  border-bottom: 1px solid var(--sf-border);
+}
+
+.lines thead th {
+  font-size: var(--sf-text-sm);
+  color: var(--sf-text-muted);
+}
+
+/* Numbers align to the end of the line, and stay aligned in either direction. */
+.lines td:not(:first-child),
+.lines th:not(:first-child) {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.lines tfoot th,
+.lines tfoot td {
+  border-bottom: none;
+  padding-top: var(--sf-space-4);
+  font-weight: 700;
+}
+
+.total {
+  font-size: var(--sf-text-lg);
+}
+
+.terms {
+  color: var(--sf-text-muted);
+  font-size: var(--sf-text-sm);
+}
+
+/*
+ * The printed invoice.
+ *
+ * No PDF library: the browser's own engine produces the file, which means the
+ * reader's paper size and margins are respected and nothing has to be
+ * generated server-side. The cost is that this stylesheet is a real view and
+ * has to be maintained as one.
+ */
+@media print {
+  /* The application chrome is not part of the document. */
+  :global(nav),
+  :global(aside),
+  .toolbar {
+    display: none !important;
+  }
+
+  .document {
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    background: none;
+  }
+
+  .lines th,
+  .lines td {
+    /* Hairlines survive at print resolution; the screen border does not. */
+    border-bottom: 1px solid #999;
+  }
+
+  /* A long invoice must not break a line across two pages. */
+  .lines tr {
+    break-inside: avoid;
+  }
+
+  .lines thead {
+    display: table-header-group;
+  }
+
+  .terms {
+    color: #000;
+  }
+}

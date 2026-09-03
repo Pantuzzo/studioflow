@@ -52,6 +52,9 @@ export const projectsApi = baseApi.injectEndpoints({
             (draft) => {
               draft.unshift({
                 ...input,
+                // The optimistic row must have the shape the server returns,
+                // and an absent rate is the column's zero.
+                hourlyRateCents: input.hourlyRateCents ?? 0,
                 id: placeholderId,
                 createdAt: new Date().toISOString(),
               })

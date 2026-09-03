@@ -14,6 +14,10 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { useToast } from '@/components/ui/Toast'
 import { useGetClientsQuery } from '@/features/clients/clientsApi'
+import {
+  moneyInputValue,
+  parseMoneyInput,
+} from '@/features/proposals/editor/money'
 import styles from '@/styles/formDialog.module.css'
 import {
   useCreateProjectMutation,
@@ -94,10 +98,11 @@ function ProjectForm({
           name: project.name,
           clientId: project.clientId,
           status: project.status,
+          hourlyRateCents: project.hourlyRateCents,
         }
       : // No client is pre-selected: guessing which client a project belongs to
         // is the kind of default that quietly files work under the wrong name.
-        { name: '', clientId: '', status: 'active' },
+        { name: '', clientId: '', status: 'active', hourlyRateCents: 0 },
   })
 
   const clientOptions = (clients ?? []).map((client) => ({
@@ -140,6 +145,9 @@ function ProjectForm({
     if (dirtyFields.name) patch.name = values.name
     if (dirtyFields.clientId) patch.clientId = values.clientId
     if (dirtyFields.status) patch.status = values.status
+    if (dirtyFields.hourlyRateCents) {
+      patch.hourlyRateCents = values.hourlyRateCents
+    }
     if (Object.keys(patch).length === 0) return
 
     void report(
@@ -180,6 +188,24 @@ function ProjectForm({
             onValueChange={field.onChange}
             options={statusOptions}
             name={field.name}
+          />
+        )}
+      </FormField>
+
+      <FormField
+        control={control}
+        name="hourlyRateCents"
+        label="Hourly rate"
+        hint="What an hour on this project bills at. Invoices are priced from it."
+      >
+        {(field) => (
+          <Input
+            inputMode="decimal"
+            value={moneyInputValue(field.value ?? 0)}
+            onChange={(event) => {
+              const parsed = parseMoneyInput(event.target.value)
+              if (parsed !== null) field.onChange(parsed)
+            }}
           />
         )}
       </FormField>
