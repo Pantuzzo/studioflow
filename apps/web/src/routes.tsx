@@ -13,6 +13,8 @@ import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { ProjectsPage } from '@/features/projects/ProjectsPage'
 import { ProposalEditorPage } from '@/features/proposals/ProposalEditorPage'
 import { ProposalsPage } from '@/features/proposals/ProposalsPage'
+import { InvoiceDetailPage } from '@/features/invoices/InvoiceDetailPage'
+import { InvoicesPage } from '@/features/invoices/InvoicesPage'
 import { TimeTrackingPage } from '@/features/time/TimeTrackingPage'
 
 /**
@@ -50,6 +52,8 @@ export const routes: RouteObject[] = [
               { path: 'proposals', element: <ProposalsPage /> },
               { path: 'proposals/:id', element: <ProposalEditorPage /> },
               { path: 'time', element: <TimeTrackingPage /> },
+              { path: 'invoices', element: <InvoicesPage /> },
+              { path: 'invoices/:id', element: <InvoiceDetailPage /> },
             ],
           },
         ],

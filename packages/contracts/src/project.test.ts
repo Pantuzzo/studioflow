@@ -9,6 +9,7 @@ const PROJECT = {
   id: 'pr_001',
   name: 'Website relaunch',
   status: 'active',
+  hourlyRateCents: 9500,
   clientId: 'cl_001',
   clientName: 'Northwind Studio',
   createdAt: '2026-05-04T10:00:00.000Z',

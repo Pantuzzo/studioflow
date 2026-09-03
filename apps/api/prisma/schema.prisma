@@ -25,11 +25,17 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  /// Invoice numbers are drawn from here, never from a count of existing rows.
+  /// Incrementing is atomic, so two concurrent generations cannot collide, and
+  /// deleting an invoice does not release its number back into the sequence.
+  invoiceSeq Int @default(0)
+
   sessions  Session[]
-  clients   Client[]
-  projects  Project[]
+  clients     Client[]
+  projects    Project[]
   proposals   Proposal[]
   timeEntries TimeEntry[]
+  invoices    Invoice[]
 
   @@map("users")
 }
@@ -83,6 +89,7 @@ model Client {
 
   projects  Project[]
   proposals Proposal[]
+  invoices  Invoice[]
 
   @@index([ownerId])
   @@map("clients")
@@ -104,6 +111,11 @@ model Project {
   id        String        @id @default(cuid())
   name      String
   status    ProjectStatus @default(active)
+
+  /// What an hour on this project costs, in minor units of the client's
+  /// currency. On the project rather than the client: two projects for one
+  /// client are routinely billed differently.
+  hourlyRateCents Int @default(0)
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
@@ -189,7 +201,59 @@ model TimeEntry {
   ownerId String
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
+  /// Set when the entry is billed. Its presence is what stops the same hour
+  /// being invoiced twice; deleting the invoice releases the entries rather
+  /// than destroying them.
+  invoiceId String?
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
   @@index([ownerId])
   @@index([projectId])
+  @@index([invoiceId])
   @@map("time_entries")
+}
+
+enum InvoiceStatus {
+  draft
+  sent
+  paid
+  void
+
+  @@map("invoice_status")
+}
+
+/// An invoice, which is a snapshot rather than a view.
+///
+/// The client's name, company and currency are copied in at generation, and
+/// the lines are frozen jsonb. Renaming a client or moving them to another
+/// currency next month must not rewrite what was billed last month.
+model Invoice {
+  id     String        @id @default(cuid())
+  /// Sequential per account and never reused. Uniqueness is enforced by the
+  /// database, so two concurrent generations cannot claim the same number.
+  number Int
+  status InvoiceStatus @default(draft)
+
+  clientId      String
+  client        Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientName    String
+  clientCompany String
+  currency      String @db.Char(3)
+
+  lines Json @default("[]")
+
+  issuedAt  DateTime @default(now())
+  dueAt     DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  timeEntries TimeEntry[]
+
+  @@unique([ownerId, number])
+  @@index([ownerId])
+  @@index([clientId])
+  @@map("invoices")
 }

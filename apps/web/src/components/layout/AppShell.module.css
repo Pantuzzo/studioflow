@@ -6,7 +6,7 @@
 
 .sidebar {
   background: var(--sf-surface);
-  border-right: 1px solid var(--sf-border);
+  border-inline-end: 1px solid var(--sf-border);
   padding: var(--sf-space-5) var(--sf-space-4);
   display: flex;
   flex-direction: column;
@@ -107,7 +107,7 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    border-right: none;
+    border-inline-end: none;
     border-bottom: 1px solid var(--sf-border);
   }
   .navList {
