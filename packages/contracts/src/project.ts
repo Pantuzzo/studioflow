@@ -16,6 +16,13 @@ export const projectSchema = z.object({
   id: z.string(),
   name: z.string().min(1),
   status: z.enum(PROJECT_STATUSES),
+  /**
+   * What an hour on this project costs, in integer minor units of the client's
+   * currency. On the project rather than the client, because two projects for
+   * the same client are routinely billed differently, and the reverse is not
+   * a thing anyone needs.
+   */
+  hourlyRateCents: z.number().int().nonnegative().max(1_000_000_000),
   clientId: z.string(),
   /**
    * Denormalised for display. The list renders the client's name on every row,
@@ -44,6 +51,18 @@ export const createProjectSchema = z.object({
   // error that reads identically to the empty state tells the user nothing.
   clientId: z.string().min(1, 'Choose a client for this project'),
   status: z.enum(PROJECT_STATUSES),
+  /**
+   * Optional rather than defaulted. A `.default()` makes the schema's input
+   * type differ from its output type, which fights zodResolver; and making it
+   * required would break every caller that predates billing. Absent means the
+   * column's zero, which reads as "not billable yet".
+   */
+  hourlyRateCents: z
+    .number()
+    .int('Use whole cents')
+    .nonnegative('A rate cannot be negative')
+    .max(1_000_000_000)
+    .optional(),
 })
 export type CreateProjectInput = z.infer<typeof createProjectSchema>
 
