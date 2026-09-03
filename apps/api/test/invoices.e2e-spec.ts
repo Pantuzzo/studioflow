@@ -330,7 +330,10 @@ describe('Invoices (e2e)', () => {
     expect(
       (
         await authed('patch', `/api/invoices/${bobs.body.id}`, alice.jar).send({
-          status: 'paid',
+          // A status a person is allowed to set: 'paid' is now refused by the
+          // contract before ownership is ever consulted, which would make this
+          // assert the wrong thing.
+          status: 'void',
         })
       ).status,
     ).toBe(404)

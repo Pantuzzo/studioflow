@@ -10,7 +10,10 @@ import { AppModule } from './app.module'
 import type { Env } from './config/env'
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule)
+  // rawBody keeps the unparsed request buffer available on `req.rawBody`.
+  // Stripe signs the exact bytes it sent, so verifying a signature against a
+  // re-serialised JSON object fails for reasons nobody enjoys debugging.
+  const app = await NestFactory.create(AppModule, { rawBody: true })
   const config = app.get(ConfigService<Env, true>)
 
   app.setGlobalPrefix('api')

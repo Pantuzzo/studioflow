@@ -213,9 +213,13 @@ model TimeEntry {
   @@map("time_entries")
 }
 
+/// `processing` is the state Stripe forces you to have: a completed checkout
+/// is not a received payment for anything but a card. Bank debits land days
+/// later, and treating "completed" as "paid" marks unpaid invoices paid.
 enum InvoiceStatus {
   draft
   sent
+  processing
   paid
   void
 
@@ -244,8 +248,14 @@ model Invoice {
 
   issuedAt  DateTime @default(now())
   dueAt     DateTime
+  /// Written by the webhook that confirmed the money, and by nothing else.
+  paidAt    DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  /// The Checkout Session this invoice was last sent to, so an incoming event
+  /// can be matched back even if its metadata is missing.
+  stripeSessionId String? @unique
 
   ownerId String
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
@@ -256,4 +266,18 @@ model Invoice {
   @@index([ownerId])
   @@index([clientId])
   @@map("invoices")
+}
+
+/// Every Stripe event this application has already acted on.
+///
+/// Stripe redelivers: on its own retry schedule, after a timeout, and whenever
+/// a human replays one from the dashboard. Handlers therefore have to be safe
+/// to run twice, and the cheapest way to be safe is to not run twice at all.
+/// The event id is the primary key, so a redelivery collides and is dropped.
+model WebhookEvent {
+  id         String   @id
+  type       String
+  receivedAt DateTime @default(now())
+
+  @@map("webhook_events")
 }

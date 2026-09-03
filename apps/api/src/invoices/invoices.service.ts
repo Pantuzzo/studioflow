@@ -42,6 +42,7 @@ function toContract(row: InvoiceRow): Invoice {
     lines: readLines(row),
     issuedAt: row.issuedAt.toISOString(),
     dueAt: row.dueAt.toISOString(),
+    paidAt: row.paidAt ? row.paidAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   }

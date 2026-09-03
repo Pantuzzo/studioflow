@@ -16,6 +16,17 @@ export const envSchema = z.object({
   SESSION_IDLE_TTL: z.coerce.number().int().positive().default(1800),
   /** Seconds after which a session dies regardless of activity. */
   SESSION_ABSOLUTE_TTL: z.coerce.number().int().positive().default(604800),
+
+  /**
+   * Stripe, in test mode. Both are optional so the app still boots without
+   * them: payments are a feature, not a prerequisite, and a contributor who
+   * only wants to run the rest of the app should not need Stripe credentials.
+   * The endpoints refuse politely when they are absent instead of crashing at
+   * boot or, worse, at the first payment.
+   */
+  STRIPE_SECRET_KEY: z.string().min(1).optional(),
+  /** Signs the webhook. Without it, no event can be trusted, so none is acted on. */
+  STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
 })
 
 export type Env = z.infer<typeof envSchema>

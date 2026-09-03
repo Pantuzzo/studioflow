@@ -16,6 +16,7 @@ import { validateEnv } from './config/env'
 import { throttlerConfig } from './config/throttler.config'
 import { HealthController } from './health/health.controller'
 import { InvoicesModule } from './invoices/invoices.module'
+import { PaymentsModule } from './payments/payments.module'
 import { PrismaModule } from './prisma/prisma.module'
 import { ProjectsModule } from './projects/projects.module'
 import { ProposalsModule } from './proposals/proposals.module'
@@ -36,6 +37,7 @@ import { TimeEntriesModule } from './time-entries/time-entries.module'
     ProposalsModule,
     TimeEntriesModule,
     InvoicesModule,
+    PaymentsModule,
   ],
   controllers: [HealthController],
   providers: [
