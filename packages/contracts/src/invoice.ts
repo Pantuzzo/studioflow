@@ -11,8 +11,33 @@ import { z } from 'zod'
  * document with legal weight rather than editorial weight.
  */
 
-export const INVOICE_STATUSES = ['draft', 'sent', 'paid', 'void'] as const
+/**
+ * Where an invoice is.
+ *
+ * `processing` exists because of a fact about Stripe that is easy to miss:
+ * `checkout.session.completed` fires when the customer finishes the form, not
+ * when the money arrives. For a card those are the same instant. For a bank
+ * debit they are days apart, and treating "completed" as "paid" marks unpaid
+ * invoices paid. So there is a state for money that is on its way.
+ */
+export const INVOICE_STATUSES = [
+  'draft',
+  'sent',
+  'processing',
+  'paid',
+  'void',
+] as const
 export type InvoiceStatus = (typeof INVOICE_STATUSES)[number]
+
+/**
+ * The statuses a person is allowed to set.
+ *
+ * `processing` and `paid` are absent on purpose: they are claims about money,
+ * and only a signed webhook from Stripe may make them. A browser that could
+ * mark an invoice paid would make the whole payment integration decorative.
+ */
+export const MANUAL_INVOICE_STATUSES = ['draft', 'sent', 'void'] as const
+export type ManualInvoiceStatus = (typeof MANUAL_INVOICE_STATUSES)[number]
 
 /**
  * One billable line. Quantities are fractional because hours are; money is
@@ -48,6 +73,8 @@ export const invoiceSchema = z.object({
   lines: invoiceLinesSchema,
   issuedAt: z.iso.datetime(),
   dueAt: z.iso.datetime(),
+  /** Set by the webhook that confirmed the money, and by nothing else. */
+  paidAt: z.iso.datetime().nullable(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 })
@@ -111,7 +138,7 @@ export type GenerateInvoiceInput = z.infer<typeof generateInvoiceSchema>
  */
 export const updateInvoiceSchema = z
   .object({
-    status: z.enum(INVOICE_STATUSES),
+    status: z.enum(MANUAL_INVOICE_STATUSES),
     dueAt: z.iso.datetime(),
   })
   .partial()
@@ -119,3 +146,15 @@ export const updateInvoiceSchema = z
     message: 'Provide at least one field to update',
   })
 export type UpdateInvoiceInput = z.infer<typeof updateInvoiceSchema>
+
+/**
+ * Where to send the payer.
+ *
+ * A hosted Checkout page rather than card fields in this app: no card data
+ * touches this codebase, which is the difference between an integration that
+ * needs a PCI conversation and one that does not.
+ */
+export const checkoutSessionSchema = z.object({
+  url: z.url(),
+})
+export type CheckoutSession = z.infer<typeof checkoutSessionSchema>
