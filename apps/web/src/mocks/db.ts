@@ -1,5 +1,7 @@
 import type {
   Client,
+  Invoice,
+  InvoiceSummary,
   Project,
   Proposal,
   ProposalSummary,
@@ -67,6 +69,7 @@ const SEED_PROJECTS: readonly StoredProject[] = [
     id: 'pr_001',
     name: 'Website relaunch',
     status: 'active',
+    hourlyRateCents: 9500,
     clientId: 'cl_001',
     createdAt: '2026-04-02T09:00:00.000Z',
   },
@@ -74,6 +77,7 @@ const SEED_PROJECTS: readonly StoredProject[] = [
     id: 'pr_002',
     name: 'Brand identity',
     status: 'paused',
+    hourlyRateCents: 11000,
     clientId: 'cl_002',
     createdAt: '2026-05-18T13:45:00.000Z',
   },
@@ -133,8 +137,14 @@ const SEED_PROPOSALS: readonly StoredProposal[] = [
   },
 ]
 
-/** Stored the way the database stores it: names resolved through the project. */
-type StoredTimeEntry = Omit<TimeEntry, 'projectName' | 'clientName'>
+/**
+ * Stored the way the database stores it: names resolved through the project,
+ * plus the billing link the wire contract does not carry. Its presence is what
+ * makes an entry unbillable a second time.
+ */
+type StoredTimeEntry = Omit<TimeEntry, 'projectName' | 'clientName'> & {
+  invoiceId?: string
+}
 
 const SEED_TIME_ENTRIES: readonly StoredTimeEntry[] = [
   {
@@ -155,6 +165,34 @@ const SEED_TIME_ENTRIES: readonly StoredTimeEntry[] = [
   },
 ]
 
+/** Frozen at generation, exactly as the API stores it. */
+type StoredInvoice = Invoice
+
+const SEED_INVOICES: readonly StoredInvoice[] = [
+  {
+    id: 'in_001',
+    number: 1,
+    status: 'sent',
+    clientId: 'cl_001',
+    clientName: 'Ava Thompson',
+    clientCompany: 'Northwind Studio',
+    currency: 'USD',
+    lines: [
+      {
+        id: 'pr_001',
+        description: 'Website relaunch',
+        projectId: 'pr_001',
+        quantityHours: 2.5,
+        unitPriceCents: 9500,
+      },
+    ],
+    issuedAt: '2026-08-17T09:00:00.000Z',
+    dueAt: '2026-08-31T09:00:00.000Z',
+    createdAt: '2026-08-17T09:00:00.000Z',
+    updatedAt: '2026-08-17T09:00:00.000Z',
+  },
+]
+
 interface StoredUser extends User {
   password: string
 }
@@ -165,6 +203,8 @@ interface DbState {
   projects: StoredProject[]
   proposals: StoredProposal[]
   timeEntries: StoredTimeEntry[]
+  invoices: StoredInvoice[]
+  invoiceSeq: number
   signedInUserId: string | null
   seq: number
 }
@@ -179,6 +219,10 @@ function seed(): DbState {
       blocks: structuredClone(proposal.blocks),
     })),
     timeEntries: SEED_TIME_ENTRIES.map((entry) => ({ ...entry })),
+    invoices: SEED_INVOICES.map((invoice) => structuredClone(invoice)),
+    // Drawn from a counter, never from a count of rows: deleting an invoice
+    // must not release its number, exactly as the API behaves.
+    invoiceSeq: SEED_INVOICES.length,
     signedInUserId: null,
     seq: 100,
   }
@@ -397,6 +441,65 @@ export const db = {
     const before = state.timeEntries.length
     state.timeEntries = state.timeEntries.filter((entry) => entry.id !== id)
     return state.timeEntries.length < before
+  },
+
+  get invoices(): InvoiceSummary[] {
+    return state.invoices.map(({ lines, ...rest }) => ({
+      ...rest,
+      lineCount: lines.length,
+    }))
+  },
+
+  findInvoice(id: string): Invoice | undefined {
+    return state.invoices.find((invoice) => invoice.id === id)
+  },
+
+  /** Mirrors the API: unbilled, finished entries for that client's projects. */
+  billableEntries(clientId: string, from: string, to: string) {
+    const projectIds = new Set(
+      state.projects.filter((p) => p.clientId === clientId).map((p) => p.id),
+    )
+    return state.timeEntries.filter(
+      (entry) =>
+        entry.invoiceId === undefined &&
+        entry.endedAt !== null &&
+        projectIds.has(entry.projectId) &&
+        entry.startedAt >= from &&
+        entry.startedAt < to,
+    )
+  },
+
+  insertInvoice(invoice: Omit<StoredInvoice, 'number'>): Invoice {
+    state.invoiceSeq += 1
+    const created = { ...invoice, number: state.invoiceSeq }
+    state.invoices.unshift(created)
+    return created
+  },
+
+  markEntriesBilled(entryIds: readonly string[], invoiceId: string): void {
+    for (const entry of state.timeEntries) {
+      if (entryIds.includes(entry.id)) entry.invoiceId = invoiceId
+    }
+  },
+
+  updateInvoice(
+    id: string,
+    patch: Partial<StoredInvoice>,
+  ): Invoice | undefined {
+    const found = state.invoices.find((invoice) => invoice.id === id)
+    if (!found) return undefined
+    Object.assign(found, patch, { updatedAt: new Date().toISOString() })
+    return found
+  },
+
+  deleteInvoice(id: string): boolean {
+    const before = state.invoices.length
+    state.invoices = state.invoices.filter((invoice) => invoice.id !== id)
+    // Releasing the hours, not destroying them.
+    for (const entry of state.timeEntries) {
+      if (entry.invoiceId === id) entry.invoiceId = undefined
+    }
+    return state.invoices.length < before
   },
 
   nextId(prefix: string): string {

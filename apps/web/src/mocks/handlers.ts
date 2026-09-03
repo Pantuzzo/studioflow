@@ -11,7 +11,10 @@ import {
   createTimeEntrySchema,
   startTimerSchema,
   updateTimeEntrySchema,
+  generateInvoiceSchema,
+  updateInvoiceSchema,
   type Client,
+  type InvoiceLine,
 } from '@studioflow/contracts'
 import { http, HttpResponse } from 'msw'
 import { db } from '@/mocks/db'
@@ -32,7 +35,7 @@ const badRequest = () =>
   HttpResponse.json({ message: 'Validation failed' }, { status: 400 })
 
 const notFound = (
-  what: 'Client' | 'Project' | 'Proposal' | 'Time entry' = 'Client',
+  what: 'Client' | 'Project' | 'Proposal' | 'Time entry' | 'Invoice' = 'Client',
 ) => HttpResponse.json({ message: `${what} not found` }, { status: 404 })
 
 export const handlers = [
@@ -137,6 +140,8 @@ export const handlers = [
 
     const created = db.insertProject({
       ...parsed.data,
+      // Absent means not billable yet, which is the column's default.
+      hourlyRateCents: parsed.data.hourlyRateCents ?? 0,
       id: db.nextId('pr'),
       createdAt: new Date().toISOString(),
     })
@@ -308,5 +313,109 @@ export const handlers = [
     return db.deleteTimeEntry(String(params.id))
       ? new HttpResponse(null, { status: 204 })
       : notFound('Time entry')
+  }),
+
+  http.get('/api/invoices', () => {
+    if (!db.signedInUser) return unauthorized()
+    return HttpResponse.json(db.invoices)
+  }),
+
+  http.get('/api/invoices/:id', ({ params }) => {
+    if (!db.signedInUser) return unauthorized()
+    const found = db.findInvoice(String(params.id))
+    return found ? HttpResponse.json(found) : notFound('Invoice')
+  }),
+
+  http.post('/api/invoices/generate', async ({ request }) => {
+    if (!db.signedInUser) return unauthorized()
+    const parsed = generateInvoiceSchema.safeParse(await request.json())
+    if (!parsed.success) return badRequest()
+
+    const client = db.findClient(parsed.data.clientId)
+    if (!client) return notFound()
+
+    const entries = db.billableEntries(
+      client.id,
+      parsed.data.from,
+      parsed.data.to,
+    )
+    if (entries.length === 0) {
+      return HttpResponse.json(
+        { message: 'No unbilled time in that period' },
+        { status: 409 },
+      )
+    }
+
+    // One line per project, priced at the project's rate, exactly as the API
+    // does it. The names are copied in rather than referenced.
+    const seconds = new Map<string, number>()
+    for (const entry of entries) {
+      const elapsed = Math.max(
+        0,
+        Math.floor(
+          (new Date(entry.endedAt as string).getTime() -
+            new Date(entry.startedAt).getTime()) /
+            1000,
+        ),
+      )
+      seconds.set(
+        entry.projectId,
+        (seconds.get(entry.projectId) ?? 0) + elapsed,
+      )
+    }
+
+    const lines: InvoiceLine[] = [...seconds.entries()].flatMap(
+      ([projectId, total]) => {
+        const project = db.projects.find((p) => p.id === projectId)
+        if (!project) return []
+        return [
+          {
+            id: projectId,
+            description: project.name,
+            projectId,
+            quantityHours: Math.round((total / 3600) * 100) / 100,
+            unitPriceCents: project.hourlyRateCents,
+          },
+        ]
+      },
+    )
+
+    const issuedAt = new Date()
+    const created = db.insertInvoice({
+      id: db.nextId('in'),
+      status: 'draft',
+      clientId: client.id,
+      clientName: client.name,
+      clientCompany: client.company,
+      currency: client.currency,
+      lines,
+      issuedAt: issuedAt.toISOString(),
+      dueAt: new Date(
+        issuedAt.getTime() + (parsed.data.dueInDays ?? 14) * 86_400_000,
+      ).toISOString(),
+      createdAt: issuedAt.toISOString(),
+      updatedAt: issuedAt.toISOString(),
+    })
+    db.markEntriesBilled(
+      entries.map((entry) => entry.id),
+      created.id,
+    )
+    return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.patch('/api/invoices/:id', async ({ params, request }) => {
+    if (!db.signedInUser) return unauthorized()
+    const parsed = updateInvoiceSchema.safeParse(await request.json())
+    if (!parsed.success) return badRequest()
+
+    const updated = db.updateInvoice(String(params.id), parsed.data)
+    return updated ? HttpResponse.json(updated) : notFound('Invoice')
+  }),
+
+  http.delete('/api/invoices/:id', ({ params }) => {
+    if (!db.signedInUser) return unauthorized()
+    return db.deleteInvoice(String(params.id))
+      ? new HttpResponse(null, { status: 204 })
+      : notFound('Invoice')
   }),
 ]
