@@ -244,6 +244,42 @@ integration tests through MSW and by the API suite against real Postgres, and a
 token browser test that proves neither would be worse than none. It stays on
 the list rather than being quietly dropped.
 
+## Week 10 note
+
+Two artefacts, both built and verified here: a container that serves the API,
+and a directory of static files that is the web client.
+[docs/DEPLOYMENT.md](DEPLOYMENT.md) has the commands, the environment table and
+the measured sizes. The decisions worth naming:
+
+- **The container does not run migrations.** Every replica racing the same
+  migration on every restart is not a deployment strategy. They run from the
+  pipeline, before traffic moves.
+- **The image ships no build tooling.** Moving the Prisma CLI into production
+  dependencies, so the image could migrate itself, dragged Prisma Studio, an
+  in-browser Postgres, TypeScript and effect along with it: 166 MB of tooling a
+  running server never touches. Measured, then removed. 877 MB became 683 MB.
+- **`pnpm deploy`, not `pnpm prune`.** Pruning a workspace root leaves the
+  symlink farm pnpm relies on in pieces, and the container cannot then resolve
+  its own dependencies. That took three failed builds to find.
+
+The remaining weight is Prisma's query engine. Setting the generator's `output`
+explicitly would let the client ship as ordinary source and shrink it further.
+That is the obvious next step and it is not done.
+
+[docs/case-study.md](case-study.md) is the long-form write-up: what the shared
+contract bought and what it cost, why no token reaches the browser, why MobX
+owns exactly one field, and the four things that went wrong — each of which was
+not a broken feature but something _about_ a feature that everyone had stopped
+looking at.
+
+Two things this week found that were nothing to do with deployment: the README
+had been missing its rows for weeks 7, 8 and 9. Three `replace` calls without an
+assertion had silently done nothing after Prettier realigned the table. The same
+mistake, three times, invisible because the file still looked fine.
+
+Not done: the demo video, and a live deployment. Both need decisions and
+accounts that are not the code's to make.
+
 ## Backend note
 
 **Superseded during Week 3.** The original plan was mock-first through Week 6, with a thin

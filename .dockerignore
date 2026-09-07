@@ -1,0 +1,12 @@
+# Everything the image builds for itself, or must never contain.
+node_modules
+**/node_modules
+**/dist
+**/storybook-static
+**/coverage
+.git
+.github
+**/.env
+**/.env.*
+!**/.env.example
+**/*.log
