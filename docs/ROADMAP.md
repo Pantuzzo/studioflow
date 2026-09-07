@@ -193,6 +193,57 @@ Not built: subscriptions, refunds, partial payments, and Stripe Elements. Card
 fields never render in this app, which is the difference between an integration
 that needs a PCI conversation and one that does not.
 
+## Week 9 note
+
+The row above promised "62 → 98 on Lighthouse (with numbers)". Here are the
+numbers, and they do not say that.
+
+**The score did not move. It was already 100.**
+
+|                | Before (one chunk) | After (split routes) |
+| -------------- | ------------------ | -------------------- |
+| Performance    | 100                | 100                  |
+| Total blocking | 0 ms               | 0 ms                 |
+| LCP, median    | 602 ms             | 515 ms               |
+| JavaScript     | 254.1 kB           | 168.8 kB             |
+
+Measured with Lighthouse 13, desktop preset, against the production build served
+by `vite preview`, three runs each, medians reported.
+
+So the honest version of this week is not a score going up. It is that **the
+signed-out visitor stopped downloading a third of the application they cannot
+reach yet**: the login screen used to carry the proposal editor's drag-and-drop,
+the timesheet's virtualizer and MobX. The routes behind the session guard now
+load on demand through the router's own `lazy`.
+
+A Lighthouse score of 100 never meant there was nothing to fix. It meant the
+test conditions — localhost, desktop, a fast machine — were generous enough to
+hide 85 kB.
+
+**The methodology mattered more than the result.** The first run measured
+performance 67 with 1,430 ms of blocking time, which would have been a
+spectacular and completely false "before". It was the first run on a cold
+machine. One run is not a measurement, which is why every figure above is a
+median of three.
+
+What is now guarded rather than hoped for:
+
+- **A bundle budget in CI.** `pnpm -F @studioflow/web size` fails the build if
+  the entry chunk passes 185 kB gzipped. One eager import in the route tree
+  undoes the split silently, because the app still works.
+- **axe over six real screens**, in the test suite rather than in Storybook's
+  panel. The definition of done has claimed "axe clean" since week one, and
+  until now nobody re-checked it. Six screens, zero violations.
+- **`ANALYZE=1 pnpm build`** writes a treemap and the raw module sizes, so the
+  next person asking "what is in there" has an answer rather than a guess. It is
+  react-dom (95.8 kB gz), react-router (46.8), zod (33.4) and Redux Toolkit
+  (31.4); that is the floor.
+
+Not done: Playwright. The flows it would cover are already covered twice, by
+integration tests through MSW and by the API suite against real Postgres, and a
+token browser test that proves neither would be worse than none. It stays on
+the list rather than being quietly dropped.
+
 ## Backend note
 
 **Superseded during Week 3.** The original plan was mock-first through Week 6, with a thin

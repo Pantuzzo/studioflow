@@ -37,6 +37,9 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Bundle budget
+        run: pnpm -F @studioflow/web size
+
       - name: Build Storybook
         run: pnpm build-storybook
 
