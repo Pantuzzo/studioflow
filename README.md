@@ -33,8 +33,10 @@ apps/
 packages/
 └── contracts/  Zod schemas + inferred types — the single source of truth
 docs/
-├── adr/        Architecture Decision Records
-└── plans/      Design and implementation plans
+├── adr/            Architecture Decision Records
+├── plans/          Design and implementation plans
+├── DEPLOYMENT.md   How the two artefacts are built and run
+└── case-study.md   The decisions, written at the end
 ```
 
 `packages/contracts` is the load-bearing idea: the same Zod schemas validate requests in NestJS, drive the react-hook-form resolvers in the web app, generate the Swagger docs, and back the MSW handlers. Client and server cannot drift, because there is only one copy of the contract.
@@ -66,11 +68,22 @@ The recruiter's-eye view — each entry maps to real code.
 | A once-a-second observable that re-renders one component                    | [timerStore.ts](apps/web/src/features/time/timerStore.ts)                                                             |
 | A virtualized timesheet that stays small as it grows                        | [TimeTrackingPage.tsx](apps/web/src/features/time/TimeTrackingPage.tsx)                                               |
 | Integration tests through the real data layer (MSW)                         | [ClientsPage.test.tsx](apps/web/src/features/clients/ClientsPage.test.tsx)                                            |
+| Invoices as frozen snapshots, not views over live data                      | [invoice.ts](packages/contracts/src/invoice.ts), [invoices.service.ts](apps/api/src/invoices/invoices.service.ts)     |
+| An hour that cannot be billed twice, enforced by a column                   | [invoices.service.ts](apps/api/src/invoices/invoices.service.ts)                                                      |
+| Real `Intl`: plural rules, currency exponents, relative dates               | [i18n/format.ts](apps/web/src/i18n/format.ts)                                                                         |
+| RTL as a toggle, with logical CSS properties throughout                     | [useDirection.ts](apps/web/src/i18n/useDirection.ts)                                                                  |
+| PDF via the browser's print pipeline and a real print stylesheet            | [InvoiceDetailPage.module.css](apps/web/src/features/invoices/InvoiceDetailPage.module.css)                           |
+| Stripe webhooks: signature over raw bytes, idempotent, out-of-order safe    | [payments.service.ts](apps/api/src/payments/payments.service.ts)                                                      |
+| A payment state machine where only the webhook may claim money              | [invoice.ts](packages/contracts/src/invoice.ts)                                                                       |
+| A CSRF exemption that is explicit, narrow and documented                    | [auth.constants.ts](apps/api/src/auth/auth.constants.ts)                                                              |
+| Route-level code splitting, with a bundle budget enforced in CI             | [routes.tsx](apps/web/src/routes.tsx), [check-bundle-size.mjs](apps/web/scripts/check-bundle-size.mjs)                |
+| axe run over real screens in CI, not in a panel nobody reopens              | [accessibility.test.tsx](apps/web/src/test/accessibility.test.tsx)                                                    |
+| A production image that ships no build tooling and runs no migrations       | [Dockerfile](apps/api/Dockerfile), [DEPLOYMENT.md](docs/DEPLOYMENT.md)                                                |
 | API e2e against real Postgres                                               | [apps/api/test](apps/api/test)                                                                                        |
 | Architecture Decision Records                                               | [docs/adr](docs/adr)                                                                                                  |
 | CI gates: typecheck, lint, format, test, build, Storybook, API e2e          | [ci.yml](.github/workflows/ci.yml)                                                                                    |
 
-Still to come: a measured performance pass, then deploy and the case study. See the [roadmap](docs/ROADMAP.md).
+The ten-week plan is finished. What each week decided, and what it got wrong, is in the [roadmap](docs/ROADMAP.md) notes and the [case study](docs/case-study.md).
 
 ## Getting started
 
@@ -105,6 +118,24 @@ pnpm format:check
 pnpm build
 pnpm -F @studioflow/api test:e2e   # needs Postgres running
 ```
+
+## Deploying
+
+Two artefacts: a container that serves the API, and a directory of static files
+that is the web client. [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) has the build
+commands, the environment table and the measured image size, plus one decision
+worth knowing before reading the Dockerfile: **the container does not run
+migrations**. Every replica racing the same migration on every restart is not a
+deployment strategy, so they run from the pipeline instead.
+
+```bash
+docker build -f apps/api/Dockerfile -t studioflow-api .
+pnpm --filter @studioflow/web build       # apps/web/dist, a static SPA
+```
+
+A build with `VITE_ENABLE_MOCKS=true` needs no API and no database at all: the
+whole app runs on the mock layer the tests use. Useful for a demo, and honest
+about being one — every reload starts over.
 
 ## Security notes
 
