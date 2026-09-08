@@ -17,6 +17,11 @@ dist-ssr
 # Test / coverage
 coverage
 
+# Playwright: the mock-mode build it serves, and what it writes when it fails
+dist-e2e
+playwright-report
+test-results
+
 # Editor / OS
 .vscode/*
 !.vscode/extensions.json

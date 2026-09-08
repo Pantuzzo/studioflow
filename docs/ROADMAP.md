@@ -239,10 +239,12 @@ What is now guarded rather than hoped for:
   react-dom (95.8 kB gz), react-router (46.8), zod (33.4) and Redux Toolkit
   (31.4); that is the floor.
 
-Not done: Playwright. The flows it would cover are already covered twice, by
-integration tests through MSW and by the API suite against real Postgres, and a
-token browser test that proves neither would be worse than none. It stays on
-the list rather than being quietly dropped.
+Not done this week: Playwright. The flows it would cover are already covered
+twice, by integration tests through MSW and by the API suite against real
+Postgres, and a token browser test that proves neither would be worse than none.
+It stays on the list rather than being quietly dropped.
+
+It was built after the roadmap closed, on that condition — see below.
 
 ## Week 10 note
 
@@ -279,6 +281,50 @@ mistake, three times, invisible because the file still looked fine.
 
 Not done: the demo video, and a live deployment. Both need decisions and
 accounts that are not the code's to make.
+
+## Closing the Playwright gap
+
+Week nine deferred it with a condition attached: not a token browser test that
+repeats what the other two suites already prove. Four spec files, six tests, and
+the entry bar is written at the top of `apps/web/e2e/README.md`:
+
+> Could this be tested in the unit suite? If yes, it belongs there.
+
+What survives that bar is behaviour a DOM implementation cannot answer at all.
+Keyboard drag-and-drop, because dnd-kit moves items by measuring rectangles and
+`happy-dom` reports every rectangle as zero. Whether a lazy chunk is actually
+fetched, because that is a network fact and a byte budget cannot see it. The
+print stylesheet, because `@media print` is applied by a rendering engine.
+Redirect-back across a real document load rather than a memory router.
+
+They run against a production build with the mock layer compiled in — the same
+artefact a demo deployment would serve — not against the dev server.
+
+**It found a bug on its first run, in the feature it exists for.** The proposal
+editor announces "Picked up Heading block, position 1 of 3. Use the arrow keys
+to move it, space to drop, escape to cancel." Nobody had ever heard it. dnd-kit
+fires an `onDragOver` immediately after `onDragStart` — the block is over its own
+position — React commits both in one render, and the live region only ever held
+the second one. The instructions were written, reviewed, shipped and silently
+discarded. The fix is to say nothing while a block is over its own position,
+which is also the right announcement to make.
+
+Two things about the library that cost an afternoon and are now written down in
+`apps/web/e2e/dnd.ts`:
+
+- **Announcements have to be recorded, not sampled.** Several can land in one
+  commit, so an assertion that polls the live region sees the survivor and calls
+  the others missing. A MutationObserver installed before the drag sees the
+  sequence, which is what a screen reader consumes anyway.
+- **An arrow key pressed in the same tick as the pick-up is dropped.** dnd-kit
+  attaches its keydown listener inside a `setTimeout`, so nothing is listening
+  yet. Draining one macrotask fixes it deterministically — timers of equal delay
+  run in scheduling order, and dnd-kit scheduled first — rather than by sleeping
+  and hoping.
+
+Five consecutive clean runs before it was wired into CI, where it runs with
+retries off. A suite that goes green on the second attempt teaches you to stop
+reading it.
 
 ## Backend note
 

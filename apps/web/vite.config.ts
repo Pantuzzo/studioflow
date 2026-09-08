@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
 import path from 'node:path'
@@ -50,6 +50,11 @@ export default defineConfig({
     globals: true,
     environment: 'happy-dom',
     setupFiles: './src/test/setup.ts',
+    // Playwright's specs match Vitest's default glob. Without this, `vitest
+    // run` picks them up, imports @playwright/test outside a Playwright runner
+    // and fails in a way that looks like a broken test rather than a misrouted
+    // one.
+    exclude: [...configDefaults.exclude, 'e2e/**', 'dist-e2e/**'],
     css: true,
     coverage: {
       provider: 'v8',

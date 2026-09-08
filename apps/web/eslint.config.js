@@ -9,6 +9,9 @@ export default tseslint.config(
   {
     ignores: [
       'dist',
+      'dist-e2e',
+      'playwright-report',
+      'test-results',
       'coverage',
       'storybook-static',
       'node_modules',

@@ -66,7 +66,13 @@ export function BlockList({
     onDragStart: ({ active }) =>
       `Picked up ${describe(active.id)}, position ${positionOf(active.id)} of ${blocks.length}. Use the arrow keys to move it, space to drop, escape to cancel.`,
     onDragOver: ({ active, over }) =>
-      over
+      // Nothing to say while it is still over its own position. Beyond being
+      // noise, announcing it silently destroyed the message above: dnd-kit
+      // fires this immediately after onDragStart, React commits both in one
+      // render, and the live region only ever showed the second one. The
+      // instructions were written, shipped, and never once spoken. The
+      // end-to-end suite found that on its first run.
+      over && over.id !== active.id
         ? `${describe(active.id)} is now over position ${positionOf(over.id)} of ${blocks.length}.`
         : undefined,
     onDragEnd: ({ active, over }) =>

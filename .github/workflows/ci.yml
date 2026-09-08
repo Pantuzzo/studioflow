@@ -43,6 +43,45 @@ jobs:
       - name: Build Storybook
         run: pnpm build-storybook
 
+  # Six browser tests, kept in their own job for the same reason as the API's:
+  # a browser download should not hold up a type error.
+  #
+  # They run against a production build with the mock layer compiled in, not the
+  # dev server, so what CI exercises is the artefact that would ship. What is in
+  # here and what deliberately is not is written down in apps/web/e2e/README.md.
+  web-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Chromium only. The suite tests behaviour the unit tests cannot reach —
+      # real layout, real focus, real print media — not engine differences.
+      - name: Install Chromium
+        run: pnpm -F @studioflow/web exec playwright install --with-deps chromium
+
+      - name: Web e2e
+        run: pnpm -F @studioflow/web test:e2e
+
+      # Retries are off, so a failure here is a real one and the trace is the
+      # only record of it.
+      - name: Upload report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 7
+
   # The API's e2e suite talks to a real Postgres — mocking the database would
   # only prove the mock. Kept in its own job so the fast checks above are not
   # held up by a container boot.

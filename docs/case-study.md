@@ -13,9 +13,10 @@ It is deliberately modelled on a product that already exists. That was the
 point. A portfolio project invents its own requirements and therefore never has
 to make a hard trade; borrowing a real domain means the hard trades come to you.
 
-Ten weeks, seven architecture decision records, and 355 tests: 70 over the
-shared contract, 191 in the browser, 11 in the API's units and 83 end to end
-against a real Postgres. The interesting part is none of those numbers.
+Ten weeks, seven architecture decision records, and 361 tests: 70 over the
+shared contract, 191 in the web app, 11 in the API's units, 83 end to end
+against a real Postgres, and 6 driving an actual browser. The interesting part
+is none of those numbers.
 
 ## The decision everything else rests on
 
@@ -159,9 +160,17 @@ documented since week two as untestable in the test environment. Re-probed
 against current versions, it was not, and two form flows had been going
 unverified on the strength of a comment nobody rechecked.
 
-The pattern is the same in all four: the thing that was wrong was not the
-feature. It was something _about_ the feature that everyone had stopped
-looking at.
+**An announcement nobody had ever heard.** The proposal editor tells a screen
+reader user which block they picked up and which keys move it. dnd-kit fires an
+"is now over" event immediately after the pick-up, React commits both in one
+render, and the live region only ever held the second one. The message was
+written, reviewed and shipped, and never once spoken. The browser suite found it
+on its first run, in the one feature that suite exists for.
+
+The pattern is nearly the same in all five: the thing that was wrong was not the
+feature. It was something _about_ the feature that everyone had stopped looking
+at — except the last one, which is worse. Nobody had stopped looking at it.
+There had never been anything capable of looking.
 
 ## What I would do differently
 
@@ -183,9 +192,9 @@ afterwards works and is not as good as never adding it.
 ## What is not built
 
 Rich text in the proposal editor, PDF generated server-side, proposal templates,
-collaborative editing, subscriptions, refunds, partial payments, Stripe
-Elements, and Playwright. Each was a decision rather than an omission, and each
-is written down where the decision was made.
+collaborative editing, subscriptions, refunds, partial payments and Stripe
+Elements. Each was a decision rather than an omission, and each is written down
+where the decision was made.
 
 The one I would push back on hardest if asked to add it quickly is collaborative
 editing. It is not a feature you bolt on; it is a different design of the whole
