@@ -19,6 +19,7 @@ coverage
 
 # Playwright: the mock-mode build it serves, and what it writes when it fails
 dist-e2e
+dist-demo
 playwright-report
 test-results
 

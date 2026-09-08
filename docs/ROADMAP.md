@@ -279,8 +279,10 @@ had been missing its rows for weeks 7, 8 and 9. Three `replace` calls without an
 assertion had silently done nothing after Prettier realigned the table. The same
 mistake, three times, invisible because the file still looked fine.
 
-Not done: the demo video, and a live deployment. Both need decisions and
-accounts that are not the code's to make.
+Not done this week: the demo video, and a live deployment. Both need decisions
+and accounts that are not the code's to make.
+
+The deployment was done afterwards — see below. The video is still not.
 
 ## Closing the Playwright gap
 
@@ -325,6 +327,46 @@ Two things about the library that cost an afternoon and are now written down in
 Five consecutive clean runs before it was wired into CI, where it runs with
 retries off. A suite that goes green on the second attempt teaches you to stop
 reading it.
+
+## Publishing the demo
+
+The README said "Live demo: coming soon" for ten weeks, which is the weakest
+line a portfolio can carry. It now points at a real URL, and the choice behind
+it is worth stating: the published app is the **mock build**, running entirely
+on the MSW layer the tests use. No API, no database, no hosting account beyond
+the repository itself.
+
+That is a demo and it says so. Every reload starts over, because the server is
+a worker inside the tab. What it buys is the thing the project is for: a
+recruiter can click a link and use the app, rather than being asked to clone a
+repository and run Docker.
+
+It is also the same artefact the browser suite runs against, which was not true
+a week earlier. The six specs exercise a production build with the mock layer
+compiled in; the demo is that build with a base path.
+
+**Three things had to agree about the subdirectory**, and none of them is
+visible in development, where the base is `/`:
+
+- The build's base, passed as `--base=/studioflow/`.
+- The router's `basename`, read from `import.meta.env.BASE_URL`. Without it the
+  whole app renders as a 404 that looks like a routing bug.
+- The mock worker's registration URL. Registered at the domain root it 404s
+  here, and the failure is an app that loads and then answers nothing — worse
+  than an app that does not load, because it looks like a data problem.
+
+Verified before shipping by driving the built demo in a real browser: sign in,
+navigate, open the lazily loaded editor, and confirm the worker registered
+under `/studioflow/`. The only failing requests were the two 401s the app
+makes deliberately while signed out.
+
+GitHub Pages has no history fallback, so the workflow copies `index.html` to
+`404.html`; Pages serves it for unknown paths, the app boots, the router
+resolves the URL, and the status code stays 404. Fair for a demo, not for a
+product.
+
+The workflow does not enable Pages. Turning on public hosting for a repository
+is not a decision a build script should make.
 
 ## Backend note
 
