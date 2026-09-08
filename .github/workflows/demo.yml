@@ -1,0 +1,67 @@
+name: Demo
+
+# The published demo runs entirely on the mock layer the tests use: no API, no
+# database, no account. That is what makes it deployable to static hosting at
+# all, and it is stated on the page rather than implied — every reload starts
+# over, because the "server" is a worker inside the tab.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Pages allows one deployment at a time. Queue rather than cancel: a half-
+# finished deploy replaced mid-flight is how a site ends up serving an index
+# that points at assets from a different build.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Served from /studioflow/, not from a domain root, which is why the
+      # router takes a basename and the mock worker is registered relative to
+      # the base. Both are wrong in a way that only shows up here.
+      - name: Build the demo
+        env:
+          VITE_ENABLE_MOCKS: 'true'
+        run: pnpm -F @studioflow/web build:demo
+
+      # GitHub Pages has no history fallback: it answers an unknown path with
+      # 404.html. Making that file the app is the standard way to give a
+      # single-page app deep links here. The status code stays 404 and the page
+      # works, which is a fair trade for a demo and would not be for a product.
+      - name: Deep links
+        run: cp apps/web/dist-demo/index.html apps/web/dist-demo/404.html
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist-demo
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
