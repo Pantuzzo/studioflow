@@ -19,7 +19,14 @@ import '@/styles/global.css'
 async function enableMocking(): Promise<void> {
   if (import.meta.env.VITE_ENABLE_MOCKS !== 'true') return
   const { worker } = await import('@/mocks/browser')
-  await worker.start({ onUnhandledRequest: 'bypass' })
+  await worker.start({
+    onUnhandledRequest: 'bypass',
+    // The worker script is served from the app's own base, not the domain
+    // root. Registering it at `/mockServiceWorker.js` works locally and then
+    // 404s on any host that serves the app from a subdirectory — where the
+    // failure is an app that loads and then answers nothing.
+    serviceWorker: { url: `${import.meta.env.BASE_URL}mockServiceWorker.js` },
+  })
 }
 
 const rootElement = document.getElementById('root')

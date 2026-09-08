@@ -19,6 +19,8 @@
     "test:e2e": "playwright test",
     "build:e2e": "vite build --outDir dist-e2e",
     "preview:e2e": "vite preview --outDir dist-e2e --port 4173 --strictPort",
+    "build:demo": "vite build --base=/studioflow/ --outDir dist-demo",
+    "preview:demo": "vite preview --base=/studioflow/ --outDir dist-demo --port 4174 --strictPort",
     "msw:init": "msw init public/ --save",
     "prepare": "msw init public/ --save",
     "storybook": "storybook dev -p 6006",
