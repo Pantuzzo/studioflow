@@ -109,6 +109,40 @@ conversation with browser defaults that is not worth having.
 deployable build that needs no database and no API at all, seeded with the
 fixtures the tests use. It is a demo, not a product; every reload starts over.
 
+That is what is published at <https://pantuzzo.github.io/studioflow/>, by
+[demo.yml](../.github/workflows/demo.yml) on every push to `main`.
+
+### What a subdirectory changes
+
+The demo is served from `/studioflow/`, not from a domain root, and three
+things have to agree about that:
+
+1. **The build's base.** `pnpm -F @studioflow/web build:demo` passes
+   `--base=/studioflow/`, which is what rewrites the asset URLs in
+   `index.html`.
+2. **The router's `basename`.** It reads `import.meta.env.BASE_URL`. Without
+   it every route resolves one level above where the app lives, and the whole
+   app renders as a 404 that looks like a routing bug.
+3. **The mock worker's URL.** Registering it at `/mockServiceWorker.js` works
+   in development and then 404s here. It is registered relative to the base
+   instead. The failure mode is an app that loads and then answers nothing,
+   which is worse than an app that does not load.
+
+None of the three is visible in development, where the base is `/`.
+
+### Deep links on GitHub Pages
+
+Pages has no history fallback, so the workflow copies `index.html` to
+`404.html`. Pages serves that for any unknown path, the app boots and the
+router resolves the URL. The status code stays 404. For a demo that is a fair
+trade; for a product it would not be, which is why the requirement above is
+written as "serve `index.html` for unknown paths" rather than "copy it to
+404.html".
+
+Publishing requires **Settings → Pages → Source: GitHub Actions** on the
+repository. The workflow does not enable it, deliberately: turning on public
+hosting for a repository is not a thing a build script should decide.
+
 ## What is not here
 
 No infrastructure as code, no managed Postgres provisioning, no CDN

@@ -4,7 +4,7 @@
 
 StudioFlow is a portfolio project deliberately modeled on tools like Bonsai. Each feature is shipped to a **production-grade bar**: typed, tested, accessible, secure, and documented. The goal isn't "another CRUD app" — it's to make architecture, security, accessibility, and testing decisions **visible**.
 
-**Live demo:** _coming soon_ · **API docs:** Swagger at `/docs` when the API is running
+**Live demo:** <https://pantuzzo.github.io/studioflow/> — the whole app on mock data, no backend · **API docs:** Swagger at `/docs` when the API is running
 
 ---
 
@@ -136,8 +136,15 @@ pnpm --filter @studioflow/web build       # apps/web/dist, a static SPA
 ```
 
 A build with `VITE_ENABLE_MOCKS=true` needs no API and no database at all: the
-whole app runs on the mock layer the tests use. Useful for a demo, and honest
-about being one — every reload starts over.
+whole app runs on the mock layer the tests use. That is what the live demo is,
+published from `main` by [demo.yml](.github/workflows/demo.yml). It is honest
+about being a demo: every reload starts over, because the server is a worker
+inside the tab.
+
+Two things that only break when the app is served from a subdirectory rather
+than a domain root, both of which the demo is: the router takes its `basename`
+from Vite's base, and the mock worker is registered relative to it. Neither is
+visible in development, where the base is `/`.
 
 ## Security notes
 
